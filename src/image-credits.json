@@ -1,0 +1,212 @@
+[
+  {
+    "file": "amboseli.webp",
+    "key": "amboseli",
+    "alt": "Elephants in Amboseli National Park with Mount Kilimanjaro behind them",
+    "width": 800,
+    "height": 533,
+    "author": "Amoghavarsha JS amoghavarsha.com",
+    "license": "CC BY-SA 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Elephants_at_Amboseli_national_park_against_Mount_Kilimanjaro.jpg"
+  },
+  {
+    "file": "tsavo.webp",
+    "key": "tsavo",
+    "alt": "A dust-red elephant in Tsavo East National Park, Kenya",
+    "width": 1600,
+    "height": 1067,
+    "author": "McKay Savage from London, UK",
+    "license": "CC BY 2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Majestic_red_elephant_of_Tsavo_East_(5232098119).jpg"
+  },
+  {
+    "file": "zebra.webp",
+    "key": "zebra",
+    "alt": "Three plains zebras in the Masai Mara, Kenya",
+    "width": 1600,
+    "height": 1065,
+    "author": "Volodymyr Burdiak",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Three_zebras_in_Masai_Mara_National_Park,_Kenya.jpg"
+  },
+  {
+    "file": "migration.webp",
+    "key": "migration",
+    "alt": "Wildebeest crossing the Mara River in the Masai Mara",
+    "width": 1600,
+    "height": 1067,
+    "author": "Thomas Fuhrmann",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Masai_Mara_National_Reserve_20_-_Mara_river_crossing.jpg"
+  },
+  {
+    "file": "flamingo.webp",
+    "key": "flamingo",
+    "alt": "Flamingos on Lake Nakuru, Kenya",
+    "width": 1600,
+    "height": 2133,
+    "author": "Letherian3",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Birds_of_Lake_Nakuru_National_Park._Flamingos.jpg"
+  },
+  {
+    "file": "samburu.webp",
+    "key": "samburu",
+    "alt": "A reticulated giraffe in Samburu National Reserve, Kenya",
+    "width": 1600,
+    "height": 983,
+    "author": "Sourish Trivedy",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:The_Reticulated_Giraffe_from_Samburu.jpg"
+  },
+  {
+    "file": "zanzibar.webp",
+    "key": "zanzibar",
+    "alt": "The shoreline at a Zanzibar beach",
+    "width": 1600,
+    "height": 1067,
+    "author": "Mussi Katz from Israel",
+    "license": "Public domain",
+    "source": "https://commons.wikimedia.org/wiki/File:Zanzibar_beach_(33911916866).jpg"
+  },
+  {
+    "file": "gorilla.webp",
+    "key": "gorilla",
+    "alt": "A mountain gorilla in a tree in Bwindi Impenetrable National Park, Uganda",
+    "width": 1600,
+    "height": 2000,
+    "author": "Giles Laurent",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:064_Mountain_gorilla_climbing_a_tree_at_Bwindi_Impenetrable_Forest_National_Park_(crop)_Photo_by_Giles_Laurent.jpg"
+  },
+  {
+    "file": "rhino.webp",
+    "key": "rhino",
+    "alt": "A northern white rhino at Ol Pejeta Conservancy, Kenya",
+    "width": 1600,
+    "height": 900,
+    "author": "Lengai101",
+    "license": "CC BY 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Ceratotherium_simum_cottoni_-Ol_Pejeta_Conservancy,_Kenya.jpg"
+  },
+  {
+    "file": "ngorongoro.webp",
+    "key": "ngorongoro",
+    "alt": "Zebras on the floor of Ngorongoro Crater, Tanzania",
+    "width": 1600,
+    "height": 1067,
+    "author": "Muhammad Mahdi Karim",
+    "license": "GFDL 1.2",
+    "source": "https://commons.wikimedia.org/wiki/File:Zebras_Ngorongoro_Crater.jpg"
+  },
+  {
+    "file": "serengeti.webp",
+    "key": "serengeti",
+    "alt": "A lion in the Serengeti National Park, Tanzania",
+    "width": 1600,
+    "height": 2000,
+    "author": "Giles Laurent",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:011_The_lion_king_Tryggve_in_the_Serengeti_National_Park_Photo_by_Giles_Laurent.jpg"
+  },
+  {
+    "file": "elephant-savanna.webp",
+    "key": "elephant-savanna",
+    "alt": "An African elephant with cattle egrets on the savanna",
+    "width": 1600,
+    "height": 1066,
+    "author": "Unsplash contributor",
+    "license": "Unsplash License",
+    "source": "https://unsplash.com/photos/1557050543-4d5f4e07ef46"
+  },
+  {
+    "file": "red-savanna.webp",
+    "key": "red-savanna",
+    "alt": "Acacia tree at sunset on red savanna soil",
+    "width": 1600,
+    "height": 1066,
+    "author": "Unsplash contributor",
+    "license": "Unsplash License",
+    "source": "https://unsplash.com/photos/1547471080-7cc2caa01a7e"
+  },
+  {
+    "file": "acacia-sunset.webp",
+    "key": "acacia-sunset",
+    "alt": "Sunset behind an acacia on open grassland",
+    "width": 1600,
+    "height": 978,
+    "author": "Unsplash contributor",
+    "license": "Unsplash License",
+    "source": "https://unsplash.com/photos/1516026672322-bc52d61a55d5"
+  },
+  {
+    "file": "kilimanjaro.webp",
+    "key": "kilimanjaro",
+    "alt": "Snow-capped Mount Kilimanjaro above the Amboseli plains",
+    "width": 1600,
+    "height": 978,
+    "author": "Unsplash contributor",
+    "license": "Unsplash License",
+    "source": "https://unsplash.com/photos/1489392191049-fc10c97e64b6"
+  },
+  {
+    "file": "safari-vehicle.webp",
+    "key": "safari-vehicle",
+    "alt": "An open-roof safari vehicle at sunset",
+    "width": 1600,
+    "height": 1066,
+    "author": "Unsplash contributor",
+    "license": "Unsplash License",
+    "source": "https://unsplash.com/photos/1516426122078-c23e76319801"
+  },
+  {
+    "file": "elephant-walk.webp",
+    "key": "elephant-walk",
+    "alt": "An elephant walking through dry grass",
+    "width": 1600,
+    "height": 1066,
+    "author": "Unsplash contributor",
+    "license": "Unsplash License",
+    "source": "https://unsplash.com/photos/1535941339077-2dd1c7963098"
+  },
+  {
+    "file": "giraffe-dusk.webp",
+    "key": "giraffe-dusk",
+    "alt": "A giraffe beside an acacia at dusk",
+    "width": 1600,
+    "height": 1066,
+    "author": "Unsplash contributor",
+    "license": "Unsplash License",
+    "source": "https://unsplash.com/photos/1523805009345-7448845a9e53"
+  },
+  {
+    "file": "lions.webp",
+    "key": "lions",
+    "alt": "Two lions resting in long grass",
+    "width": 1600,
+    "height": 1066,
+    "author": "Unsplash contributor",
+    "license": "Unsplash License",
+    "source": "https://unsplash.com/photos/1504173010664-32509aeebb62"
+  },
+  {
+    "file": "queen.webp",
+    "key": "queen",
+    "alt": "The Kazinga Channel in Queen Elizabeth National Park, Uganda",
+    "width": 670,
+    "height": 430,
+    "author": "Ssemmanda will",
+    "license": "CC0",
+    "source": "https://commons.wikimedia.org/wiki/File:Kazinga_Channel_in_Queen_Elizabeth_National_Park.jpg"
+  },
+  {
+    "file": "rwanda.webp",
+    "key": "rwanda",
+    "alt": "Bisoke crater lake in Volcanoes National Park, Rwanda",
+    "width": 960,
+    "height": 561,
+    "author": "Happy Gentille",
+    "license": "CC0",
+    "source": "https://commons.wikimedia.org/wiki/File:Bisoke_Crater_Lake_in_Volcanoes_National_Park,_Rwanda.jpg"
+  }
+]
