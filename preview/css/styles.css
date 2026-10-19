@@ -1342,9 +1342,11 @@ body { background: #fff; }
   flex: none;
 }
 .value p { margin: 0.15rem 0 0; color: var(--muted); font-size: 0.92rem; }
-.cta-band { background: var(--green-2); color: white; text-align: center; padding: 3.4rem 1rem; }
-.cta-band h2, .cta-band p { color: white; }
-.cta-band p { max-width: 36rem; margin: 0 auto 1rem; }
+.cta-band { background: #f6f1ea; color: var(--ink); text-align: center; padding: 3.4rem 1rem; }
+.cta-band h2 { color: var(--ink); }
+.cta-band p { color: var(--muted); max-width: 36rem; margin: 0 auto 1rem; }
+.cta-band .btn-ghost { color: var(--ink); border-color: #8a8175; }
+.cta-band .btn-ghost:hover { color: var(--ink); border-color: var(--ink); }
 .contact-grid { display: grid; gap: 1.6rem; align-items: start; }
 .contact-card {
   background: white;
