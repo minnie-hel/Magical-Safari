@@ -8,20 +8,24 @@ define("MEHS_EMAIL", "info@magicaleastafricaheritagesafaris.com");
 define("MEHS_PHONE", "+254 722 326 845");
 define("MEHS_PHONE_HREF", "+254722326845");
 
+require get_template_directory() . "/inc/design.php";
+
 function mehs_setup() {
     add_theme_support("title-tag");
     add_theme_support("post-thumbnails");
     add_theme_support("html5", ["search-form", "comment-form", "comment-list", "gallery", "caption", "style", "script"]);
     add_image_size("mehs-card", 960, 600, true);
+    show_admin_bar(false);
 }
 add_action("after_setup_theme", "mehs_setup");
+add_filter("show_admin_bar", "__return_false", 1000);
 
 function mehs_assets() {
     $dir = get_template_directory_uri();
     wp_enqueue_style("mehs-font", "https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap", [], null);
-    wp_enqueue_style("mehs", $dir . "/assets/css/styles.css", ["mehs-font"], "1.0.2");
-    wp_enqueue_style("mehs-theme", $dir . "/assets/css/theme.css", ["mehs"], "1.0.2");
-    wp_enqueue_script("mehs", $dir . "/assets/js/main.js", [], "1.0.2", true);
+    wp_enqueue_style("mehs", $dir . "/assets/css/styles.css", ["mehs-font"], "1.0.8");
+    wp_enqueue_style("mehs-theme", $dir . "/assets/css/theme.css", ["mehs"], "1.0.8");
+    wp_enqueue_script("mehs", $dir . "/assets/js/main.js", [], "1.0.8", true);
     wp_localize_script("mehs", "MEHS_BOOK", [
         "url" => admin_url("admin-ajax.php?action=mehs_booking"),
         "nonce" => wp_create_nonce("mehs_booking"),
@@ -100,7 +104,7 @@ function mehs_offer($page) {
       <div class="offer-body">
         <h3><?php echo esc_html($title); ?></h3>
         <?php if ($excerpt !== "") : ?><p><?php echo esc_html($excerpt); ?></p><?php endif; ?>
-        <div class="offer-foot"><span>View</span><span class="offer-go">View details</span></div>
+        <div class="offer-foot"><span>View</span><span class="offer-go">View itinerary</span></div>
       </div>
     </a>
     <?php
@@ -191,6 +195,18 @@ function mehs_handle_booking() {
 }
 add_action("wp_ajax_mehs_booking", "mehs_handle_booking");
 add_action("wp_ajax_nopriv_mehs_booking", "mehs_handle_booking");
+
+function mehs_purge_saved_pages() {
+    if (get_option("mehs_purged") === "1.0.8") {
+        return;
+    }
+    update_option("mehs_purged", "1.0.8", false);
+    do_action("litespeed_purge_all");
+    if (!headers_sent()) {
+        header("X-LiteSpeed-Purge: *");
+    }
+}
+add_action("template_redirect", "mehs_purge_saved_pages");
 
 add_filter("hfe_header_enabled", "__return_false");
 add_filter("hfe_footer_enabled", "__return_false");

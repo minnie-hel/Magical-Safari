@@ -1,16 +1,5 @@
-.page-banner {
-  align-items: flex-end !important;
-  text-align: left !important;
-  min-height: 13rem !important;
-  height: 13rem !important;
-}
-.page-banner .banner-copy,
-.page-banner h1,
-.page-banner .crumbs {
-  text-align: left !important;
-  margin-left: 0 !important;
-  margin-right: auto !important;
-}
+#wpadminbar { display: none !important; }
+html { margin-top: 0 !important; }
 .page-block { padding: 1.5rem 0 3rem; }
 .entry {
   max-width: 1080px;

@@ -14,13 +14,13 @@
   <div class="section-intro">
     <p class="kicker">Our offerings</p>
     <h2>Featured tour packages</h2>
-    <p>These are the pages saved in WP Admin. Edit a page there and it updates here.</p>
-  </div>
-  <div class="offers">
-    <?php foreach (mehs_public_pages(6) as $page) {
-        mehs_offer($page);
-    } ?>
-  </div>
+        <p>Open a package for the day-by-day plan, then book it with your travel date.</p>
+      </div>
+      <div class="offers">
+        <?php foreach (array_slice(mehs_tours_in("short-kenya-safaris"), 0, 6) as $tour) {
+            mehs_offer_card($tour);
+        } ?>
+      </div>
   <p class="center"><a class="btn btn-green" href="<?php echo esc_url(home_url("/packages/")); ?>">View all packages</a></p>
 </div></section>
 <?php get_footer(); ?>

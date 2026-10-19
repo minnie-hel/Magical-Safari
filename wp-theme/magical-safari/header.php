@@ -51,6 +51,8 @@
     <a href="<?php echo esc_url(home_url("/gallery/")); ?>">Gallery</a>
     <?php $blog = mehs_page_url("blog"); ?>
     <?php if ($blog) : ?><a href="<?php echo esc_url($blog); ?>">Blog</a><?php endif; ?>
+    <?php $faqs = mehs_page_url("faqs"); ?>
+    <?php if ($faqs) : ?><a href="<?php echo esc_url($faqs); ?>">FAQs</a><?php endif; ?>
     <?php $contact = mehs_page_url("contact"); ?>
     <?php if ($contact) : ?><a href="<?php echo esc_url($contact); ?>">Contact</a><?php endif; ?>
   </nav>
