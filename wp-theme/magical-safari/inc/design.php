@@ -95,6 +95,26 @@ function mehs_find_tour($slug) {
     return null;
 }
 
+function mehs_find_tour_by_title($title) {
+    $wanted = sanitize_title($title);
+    if ($wanted === "") {
+        return null;
+    }
+    foreach (mehs_tours() as $tour) {
+        if (sanitize_title($tour["title"]) === $wanted || $tour["slug"] === $wanted) {
+            return $tour;
+        }
+    }
+    return null;
+}
+
+function mehs_book_url($title) {
+    return add_query_arg([
+        "book" => "1",
+        "trip" => $title,
+    ], home_url("/book/"));
+}
+
 function mehs_tour_from_page($page, $section) {
     $count = 1;
     if (preg_match("/(\d+)-days?/", $page->post_name, $match)) {
@@ -172,7 +192,7 @@ function mehs_tour_url($tour) {
             return get_permalink($page);
         }
     }
-    return add_query_arg("trip", $tour["title"], home_url("/book/"));
+    return add_query_arg("itinerary", sanitize_title($tour["slug"]), home_url("/packages/"));
 }
 
 function mehs_offer_card($tour) {
@@ -195,41 +215,219 @@ function mehs_offer_grid($tours) {
     echo "</div>";
 }
 
-function mehs_render_package($tour) {
+function mehs_plain($text) {
+    $text = html_entity_decode((string) $text, ENT_QUOTES | ENT_HTML5, "UTF-8");
+    return trim(preg_replace("/\s+/", " ", $text));
+}
+
+function mehs_parse_itinerary($html) {
+    $parsed = ["overview" => "", "note" => "", "table" => [], "days" => [], "highlights" => []];
+    if (!is_string($html) || trim($html) === "") {
+        return $parsed;
+    }
+    $doc = new DOMDocument();
+    $previous = libxml_use_internal_errors(true);
+    $doc->loadHTML('<?xml encoding="utf-8" ?>' . $html);
+    libxml_clear_errors();
+    libxml_use_internal_errors($previous);
+    $xpath = new DOMXPath($doc);
+    foreach ($xpath->query("//p") as $paragraph) {
+        $text = mehs_plain($paragraph->textContent);
+        if ($text === "") {
+            continue;
+        }
+        if (stripos($text, "Safari Price") !== false || (stripos($text, "per person") !== false && stripos($text, "USD") !== false)) {
+            if ($parsed["note"] === "") {
+                $parsed["note"] = $text;
+            }
+            continue;
+        }
+        if ($parsed["overview"] === "" && strlen($text) > 80) {
+            $parsed["overview"] = $text;
+        }
+    }
+    $tables = $doc->getElementsByTagName("table");
+    if ($tables->length) {
+        foreach ($tables->item(0)->getElementsByTagName("tr") as $row) {
+            $cells = [];
+            foreach ($row->childNodes as $cell) {
+                if ($cell->nodeType !== XML_ELEMENT_NODE) {
+                    continue;
+                }
+                $name = strtolower($cell->nodeName);
+                if ($name !== "td" && $name !== "th") {
+                    continue;
+                }
+                $cells[] = mehs_plain($cell->textContent);
+            }
+            if ($cells) {
+                $parsed["table"][] = $cells;
+            }
+        }
+    }
+    foreach ($xpath->query("//details[contains(@class,'e-n-accordion-item')]") as $details) {
+        $title_node = $xpath->query(".//*[contains(@class,'e-n-accordion-item-title-text')]", $details)->item(0);
+        $title = $title_node ? mehs_plain($title_node->textContent) : "";
+        $lines = [];
+        foreach ($xpath->query(".//p", $details) as $paragraph) {
+            $line = mehs_plain($paragraph->textContent);
+            if ($line !== "") {
+                $lines[] = $line;
+            }
+        }
+        if ($title !== "") {
+            $parsed["days"][] = ["title" => $title, "text" => implode("\n", $lines)];
+        }
+    }
+    foreach ($xpath->query("//li") as $item) {
+        $text = mehs_plain($item->textContent);
+        if (strlen($text) > 24 && strlen($text) < 240) {
+            $parsed["highlights"][] = $text;
+        }
+        if (count($parsed["highlights"]) >= 6) {
+            break;
+        }
+    }
+    return $parsed;
+}
+
+function mehs_price_cell($text) {
+    $text = trim((string) $text);
+    if ($text === "" || $text === "$" || strcasecmp($text, "usd") === 0) {
+        return "On request";
+    }
+    return $text;
+}
+
+function mehs_lowest_price($table) {
+    $amounts = [];
+    foreach ($table as $index => $row) {
+        if ($index === 0) {
+            continue;
+        }
+        foreach ($row as $cell_index => $cell) {
+            if ($cell_index === 0 || preg_match("/discount|free|%|child/i", (string) $cell)) {
+                continue;
+            }
+            if (!preg_match_all("/\d[\d,]*/", (string) $cell, $matches)) {
+                continue;
+            }
+            foreach ($matches[0] as $number) {
+                $value = (int) str_replace(",", "", $number);
+                if ($value >= 100) {
+                    $amounts[] = $value;
+                }
+            }
+        }
+    }
+    return $amounts ? min($amounts) : 0;
+}
+
+function mehs_saved_itinerary() {
+    $post = get_post();
+    if (!$post instanceof WP_Post) {
+        return null;
+    }
+    $parsed = mehs_parse_itinerary(apply_filters("the_content", $post->post_content));
+    if (!$parsed["days"] && count($parsed["table"]) < 2) {
+        return null;
+    }
+    return $parsed;
+}
+
+function mehs_try_saved_itinerary() {
+    $parsed = mehs_saved_itinerary();
+    if (!$parsed) {
+        return false;
+    }
+    $post = get_post();
+    $parent = $post->post_parent ? get_post($post->post_parent) : null;
+    $section = $parent instanceof WP_Post ? $parent->post_name : "";
+    $tour = mehs_find_tour($post->post_name) ?: mehs_tour_from_page($post, $section);
+    mehs_render_package($tour, $parsed);
+    return true;
+}
+
+function mehs_render_package($tour, $parsed = null) {
+    if ($parsed === null) {
+        $parsed = mehs_saved_itinerary() ?: ["overview" => "", "note" => "", "table" => [], "days" => [], "highlights" => []];
+    }
+    $summary = $parsed["overview"] !== "" ? $parsed["overview"] : $tour["summary"];
+    $highlights = $parsed["highlights"] ?: $tour["highlights"];
+    $days = $parsed["days"] ?: $tour["days"];
+    $from = mehs_lowest_price($parsed["table"]);
     mehs_banner($tour["image"], $tour["country"], $tour["title"]);
     echo '<div class="wrap package"><div class="package-main"><h2 class="ruled">Package overview</h2>';
-    if ($tour["summary"] !== "") {
-        echo "<p>" . esc_html($tour["summary"]) . "</p>";
+    if ($summary !== "") {
+        echo "<p>" . esc_html($summary) . "</p>";
     }
-    if ($tour["highlights"]) {
+    if ($highlights) {
         echo "<ul>";
-        foreach ($tour["highlights"] as $item) {
+        foreach ($highlights as $item) {
             echo "<li>" . esc_html($item) . "</li>";
         }
         echo "</ul>";
     }
-    echo '</div><aside class="price-card book-card"><div class="book-card-head"><p class="kicker">Package price from</p><p class="big">On request</p><p>Per person</p></div>';
-    echo '<div class="book-card-body"><p>Select your travel date and the number of people on the next step.</p>';
-    echo '<a class="btn btn-clay" href="' . esc_url(add_query_arg("trip", $tour["title"], home_url("/book/"))) . '">Book now</a></div></aside>';
+    echo '</div><aside class="price-card book-card"><div class="book-card-head"><p class="kicker">Package price from</p><p class="big">';
+    echo $from > 0 ? esc_html("$" . number_format($from)) : "On request";
+    echo '</p><p>Per person</p></div><div class="book-card-body">';
+    if ($parsed["note"] !== "") {
+        echo '<p class="rate-note">' . esc_html($parsed["note"]) . "</p>";
+    }
+    if (count($parsed["table"]) > 1) {
+        echo '<table class="rate-table">';
+        foreach ($parsed["table"] as $index => $row) {
+            echo "<tr>";
+            foreach ($row as $cell) {
+                $tag = $index === 0 ? "th" : "td";
+                $value = $index === 0 ? $cell : mehs_price_cell($cell);
+                echo "<" . $tag . ">" . esc_html($value) . "</" . $tag . ">";
+            }
+            echo "</tr>";
+        }
+        echo "</table>";
+    } else {
+        echo "<p>The written quote confirms the price for your dates and group size.</p>";
+    }
+    echo '<a class="btn btn-clay" href="' . esc_url(mehs_book_url($tour["title"])) . '">Book now</a></div></aside>';
     echo '<div class="package-rest"><h2 class="ruled">Day-by-day itinerary</h2>';
-    foreach ($tour["days"] as $index => $day) {
+    foreach ($days as $index => $day) {
         $open = $index === 0 ? " open" : "";
         $num = str_pad((string) ($index + 1), 2, "0", STR_PAD_LEFT);
+        $label = trim((string) ($day["title"] ?? ""));
+        $label = preg_replace("/^day\s*\d+\s*[:|\-–—]\s*/i", "", $label);
         echo '<details class="day-acc"' . $open . '><summary><span class="day-num">' . esc_html($num) . "</span><span>Day " . esc_html((string) ($index + 1));
-        if (!empty($day["title"])) {
-            echo " | " . esc_html($day["title"]);
+        if ($label !== "") {
+            echo " | " . esc_html($label);
         }
-        echo "</span></summary><p>" . esc_html($day["text"] ?? "") . "</p></details>";
+        echo "</span></summary>";
+        $lines = preg_split("/\n+/", trim((string) ($day["text"] ?? "")));
+        foreach ($lines as $line) {
+            if (trim($line) !== "") {
+                echo "<p>" . esc_html($line) . "</p>";
+            }
+        }
+        echo "</details>";
     }
-    echo '<div class="ie"><div><h2 class="ruled">What\'s included</h2><ul class="yes">';
-    foreach ($tour["includes"] as $item) {
-        echo "<li>" . esc_html($item) . "</li>";
+    if ($tour["includes"] || $tour["excludes"]) {
+        echo '<div class="ie">';
+        if ($tour["includes"]) {
+            echo '<div><h2 class="ruled">What\'s included</h2><ul class="yes">';
+            foreach ($tour["includes"] as $item) {
+                echo "<li>" . esc_html($item) . "</li>";
+            }
+            echo "</ul></div>";
+        }
+        if ($tour["excludes"]) {
+            echo '<div><h2 class="ruled">What\'s excluded</h2><ul class="no">';
+            foreach ($tour["excludes"] as $item) {
+                echo "<li>" . esc_html($item) . "</li>";
+            }
+            echo "</ul></div>";
+        }
+        echo "</div>";
     }
-    echo '</ul></div><div><h2 class="ruled">What\'s excluded</h2><ul class="no">';
-    foreach ($tour["excludes"] as $item) {
-        echo "<li>" . esc_html($item) . "</li>";
-    }
-    echo "</ul></div></div></div></div>";
+    echo "</div></div>";
 }
 
 function mehs_page_contact() {
@@ -303,11 +501,157 @@ function mehs_page_excursions() {
     echo "</div>";
 }
 
-function mehs_page_country($file, $title, $intro, $section) {
+function mehs_guide_section($heading, $items) {
+    $with_photos = isset($items[0][2]);
+    echo '<section class="guide-block"><h2 class="ruled">' . esc_html($heading) . '</h2><div class="' . ($with_photos ? "do-grid" : "values") . '">';
+    foreach ($items as $item) {
+        if ($with_photos) {
+            echo '<article class="do-card">' . mehs_image($item[2], $item[0]);
+            echo '<div><h3>' . esc_html($item[0]) . '</h3><p>' . esc_html($item[1]) . '</p></div></article>';
+            continue;
+        }
+        echo '<article class="value"><span aria-hidden="true">✓</span><div><h3>' . esc_html($item[0]) . '</h3><p>' . esc_html($item[1]) . '</p></div></article>';
+    }
+    echo "</div></section>";
+}
+
+function mehs_page_country($file, $title, $intro, $sections) {
     mehs_banner($file, "Destinations", $title);
-    echo '<div class="wrap page-block"><p class="page-lead">' . esc_html($intro) . '</p><h2 class="ruled">Packages</h2>';
-    mehs_offer_grid(mehs_tours_in($section));
-    echo "</div>";
+    echo '<div class="wrap page-block"><p class="page-lead">' . esc_html($intro) . "</p>";
+    foreach ($sections as $heading => $items) {
+        mehs_guide_section($heading, $items);
+    }
+    echo '<p class="center"><a href="' . esc_url(home_url("/packages/")) . '">Browse safari packages</a></p></div>';
+    echo '<section class="cta-band"><h2>Plan a tailor-made ' . esc_html($title) . ' safari</h2>';
+    echo "<p>Tell us the month, who is travelling, and what you want to see. We reply with a route and a written price.</p>";
+    echo '<div class="hero-actions" style="justify-content:center">';
+    echo '<a class="btn btn-clay" href="' . esc_url(mehs_page_url("contact") ?: home_url("/contact/")) . '">Enquire now</a>';
+    echo '<a class="btn btn-ghost" href="' . esc_url(home_url("/book/")) . '">Book a safari</a>';
+    echo "</div></section>";
+}
+
+function mehs_country_guides() {
+    return [
+        "kenya" => [
+            "Kenya is the usual starting point: the Mara, Amboseli, and the coast, planned from Nairobi around the month you can travel.",
+            [
+                "Things to do in Kenya" => [
+                    ["Wildlife safaris", "Private game drives in the Mara, Amboseli, Tsavo, Samburu, and Nakuru, with the vehicle and guide to yourselves.", "safari-vehicle.webp"],
+                    ["Hot-air balloon safaris", "A dawn flight over the Mara, when the month and the camp can arrange it. It is an extra, named on the quote.", "acacia-sunset.webp"],
+                    ["Cultural visits", "A Maasai or other community visit that is paid to that community, not a roadside stop.", "giraffe-dusk.webp"],
+                    ["Hiking", "Walks where the park allows them, including shorter conservancy walks. We say which days are driving and which are on foot.", "red-savanna.webp"],
+                    ["Beach holidays", "Diani, Watamu, or the north coast after the safari. Plan three or four nights. One night is mostly transfers.", "zanzibar.webp"],
+                ],
+                "Top destinations to explore" => [
+                    ["Maasai Mara", "Open grassland, big cats, and the river crossings in a good July to October."],
+                    ["Amboseli", "Elephants on the open plain, with Kilimanjaro behind them when the sky is clear."],
+                    ["Tsavo East and Tsavo West", "Red soil, large elephant herds, and long views between the two parks."],
+                    ["Samburu", "The northern specials: Grevy’s zebra, reticulated giraffe, and the Ewaso Ng’iro."],
+                    ["Lake Nakuru and Ol Pejeta", "Rhino country, with flamingos at Nakuru when the lake is holding them."],
+                ],
+                "Travel guides" => [
+                    ["Best time to visit", "June to October is the dry season and the usual Mara window. January to March is hot and quieter. April and May are the long rains: green, fewer vehicles, and some camps closed."],
+                    ["What to expect", "Most days are two game drives from a lodge or camp. Distances between parks are real. A Nairobi day trip to Amboseli is mostly driving."],
+                    ["Planning notes", "Park fees, the vehicle, and the lodges are named on the quote before you pay. Ask for the Tourism Regulatory Authority licence with that quote."],
+                ],
+                "Wildlife and safari experiences" => [
+                    ["The Great Migration", "River crossings are a July to October plan. A particular morning cannot be promised."],
+                    ["Big Five safaris", "The Mara is the usual Big Five route. Nakuru and Ol Pejeta are the stronger rhino stops."],
+                    ["Photography safaris", "We can bias the hours toward morning and evening light, and book a vehicle with a window seat for each person."],
+                ],
+            ],
+        ],
+        "tanzania" => [
+            "Tanzania is the Serengeti, Ngorongoro, and the northern parks, usually starting in Arusha, with Zanzibar when you want a beach at the end.",
+            [
+                "Things to do in Tanzania" => [
+                    ["Wildlife safaris", "Game drives on the Serengeti plains and in Tarangire, with a crater descent at Ngorongoro when that day is in the plan.", "serengeti.webp"],
+                    ["Hot-air balloon safaris", "A sunrise balloon over the Serengeti in the months the operators fly. It is quoted on its own line.", "elephant-savanna.webp"],
+                    ["Cultural experiences", "A visit with a Maasai community near the crater highlands or a walk in a village that is set up for guests.", "ngorongoro.webp"],
+                    ["Hiking", "Kilimanjaro and the shorter highland walks are separate from a game-drive safari. We plan them only with the days they need.", "kilimanjaro.webp"],
+                    ["Beach holidays", "Zanzibar after the northern circuit. Three or four nights is the useful length.", "zanzibar.webp"],
+                ],
+                "Top destinations to explore" => [
+                    ["Serengeti", "The long-grass and short-grass plains, and the migration herds when the month matches the route."],
+                    ["Ngorongoro Crater", "A day on the crater floor for rhino, lion, and the large herds on the floor."],
+                    ["Tarangire", "Baobabs and elephants in the dry season, when the river holds the animals."],
+                    ["Lake Manyara", "A compact park on the way, known for forest, the lake, and tree-climbing lions when they are up."],
+                    ["Mount Kilimanjaro", "The mountain is its own trek, not an afternoon added to a safari."],
+                    ["Zanzibar", "Stone Town and the north or east coast after the wildlife days."],
+                ],
+                "Travel guides" => [
+                    ["Best time to visit", "June to October is dry and the usual time for the Serengeti river area. January to March is the calving season on the southern plains. April and May are the long rains."],
+                    ["What to expect", "Trips start in Arusha. Internal flights save a long drive when the route is Serengeti to Zanzibar. The quote says which transfers are by road and which are by air."],
+                    ["Planning notes", "Park fees and the crater service fee are part of the written price. Tanzania’s own entry rules are sent before you pay a deposit."],
+                ],
+                "Wildlife and safari experiences" => [
+                    ["The Great Migration", "The herds move. We place the Serengeti nights where the month usually finds them, and we do not promise a crossing."],
+                    ["Big Five safaris", "Ngorongoro and the Serengeti are the usual Big Five pairing. Tarangire adds elephants."],
+                    ["Photography safaris", "Dawn drives and a vehicle that can stay with a sighting. Balloon flights are optional."],
+                ],
+            ],
+        ],
+        "uganda" => [
+            "Uganda safaris are built around gorilla trekking in Bwindi and, when a permit is free, Mgahinga. The permit is quoted on its own line.",
+            [
+                "Things to do in Uganda" => [
+                    ["Gorilla trekking", "A morning in Bwindi or Mgahinga with a permit booked in your name. The trek can be short or most of the day.", "gorilla.webp"],
+                    ["Chimpanzee tracking", "Kibale is the usual forest for chimpanzees, on a different day from the gorillas.", "rwanda.webp"],
+                    ["Boat safaris", "A launch on the Kazinga Channel in Queen Elizabeth, for hippos, buffalo, and elephants along the bank.", "queen.webp"],
+                    ["Game drives", "Queen Elizabeth and Murchison Falls for savannah animals between the forest days.", "lions.webp"],
+                    ["Community visits", "A stop with a community near the park, paid to that community.", "acacia-sunset.webp"],
+                ],
+                "Top destinations to explore" => [
+                    ["Bwindi Impenetrable National Park", "The main gorilla forest, with several sectors. The sector depends on which permits are free."],
+                    ["Mgahinga", "The smaller gorilla park on the volcanoes, used when a Bwindi permit is not open."],
+                    ["Queen Elizabeth National Park", "The Kazinga Channel, the Ishasha tree-climbing lions when they are in the figs, and crater lakes."],
+                    ["Murchison Falls", "The Nile squeezed through the falls, with game drives on the north bank."],
+                    ["Kibale", "Chimpanzee tracking in the forest west of the crater lakes."],
+                ],
+                "Travel guides" => [
+                    ["Best time to visit", "June to September and December to February are the drier months. The forests are trekable in the rains, and the paths are steeper and muddier."],
+                    ["What to expect", "A gorilla day starts early. You walk with rangers to where the family is that morning. Fitness and a porter are worth deciding before you book."],
+                    ["Planning notes", "The gorilla permit is a separate line on the quote, and the cancellation rule on a permit is stricter than on the lodges."],
+                ],
+                "Wildlife and safari experiences" => [
+                    ["Mountain gorillas", "One hour with a habituated family after the trek in. A second trek is a second permit."],
+                    ["Chimpanzees", "Kibale tracking is the usual add, not a substitute for the gorilla permit."],
+                    ["Tree-climbing lions", "Ishasha, in the southern part of Queen Elizabeth, when the lions are using the fig trees."],
+                    ["Shoebill storks", "Mabamba and the Nile delta are the places named for shoebill, as an extra day from Entebbe or Murchison."],
+                ],
+            ],
+        ],
+        "rwanda" => [
+            "Rwanda is gorilla trekking in Volcanoes National Park, savannah in Akagera, and forest in Nyungwe. The gorilla permit is shown on its own line.",
+            [
+                "Things to do in Rwanda" => [
+                    ["Gorilla trekking", "A permit in Volcanoes National Park. The group size on the mountain is small, and the start is early.", "gorilla.webp"],
+                    ["Golden monkey tracking", "A shorter forest walk in the same park, often the day before or after the gorillas.", "rwanda.webp"],
+                    ["Canopy walk", "The suspension bridge in Nyungwe, with colobus and a chance of chimpanzees on a separate tracking permit.", "ngorongoro.webp"],
+                    ["Game drives", "Akagera for savannah animals on the eastern lakes.", "zebra.webp"],
+                    ["Kigali and Lake Kivu", "A city day, then the lake if you want a night off the parks.", "flamingo.webp"],
+                ],
+                "Top destinations to explore" => [
+                    ["Volcanoes National Park", "Gorillas and golden monkeys on the Virunga slopes."],
+                    ["Nyungwe", "Montane forest, the canopy walk, and chimpanzee tracking."],
+                    ["Akagera", "Savannah, lakes, and the reintroduced lions and rhinos."],
+                    ["Lake Kivu", "A rest night after the forest, with the Congo Nile trail if you want a walk."],
+                    ["Kigali", "The usual arrival city, and the genocide memorial if you want that visit in the plan."],
+                ],
+                "Travel guides" => [
+                    ["Best time to visit", "June to September and December to February are drier. The forest treks run all year. Paths are harder in the long rains."],
+                    ["What to expect", "Roads between Kigali, Musanze, and the forest gates are good by regional standards. The trek itself is the variable: uphill, and as long as the gorillas’ location that morning."],
+                    ["Planning notes", "The gorilla permit is quoted alone. Rwanda’s own entry rules are sent before a deposit."],
+                ],
+                "Wildlife and safari experiences" => [
+                    ["Mountain gorillas", "One hour with the family. Permits are limited, so the month has to be agreed before we request them."],
+                    ["Big Five in Akagera", "Lion, leopard, elephant, buffalo, and rhino are the reason for the savannah day. Sightings are wildlife, not a guarantee of all five in one drive."],
+                    ["Chimpanzees and colobus", "Nyungwe is the forest for both. Chimpanzee tracking uses its own permit."],
+                    ["Golden monkeys", "Bamboo forest in Volcanoes, a different morning from the gorillas."],
+                ],
+            ],
+        ],
+    ];
 }
 
 function mehs_render_known_page() {
@@ -332,20 +676,16 @@ function mehs_render_known_page() {
         mehs_page_excursions();
         return true;
     }
-    if ($slug === "short-kenya-safaris") {
-        mehs_page_country("zebra.webp", "Kenya", "Kenya is where most of our guests start. Short safaris sit beside the longer Mara, Amboseli, Tsavo, Samburu, Nakuru and Ol Pejeta routes.", "short-kenya-safaris");
-        return true;
-    }
-    if ($slug === "tanzania-safaris") {
-        mehs_page_country("serengeti.webp", "Tanzania", "Tanzania trips start in Arusha. The Serengeti and Ngorongoro routes are here, with Zanzibar when you want a beach at the end.", "tanzania-safaris");
-        return true;
-    }
-    if ($slug === "uganda-safaris") {
-        mehs_page_country("gorilla.webp", "Uganda", "Uganda safaris are built around gorilla trekking in Bwindi and, when a permit is free, Mgahinga. Permits are quoted on their own line.", "uganda-safaris");
-        return true;
-    }
-    if ($slug === "rwanda-safaris") {
-        mehs_page_country("rwanda.webp", "Rwanda", "Rwanda is gorilla trekking in Volcanoes National Park, savannah in Akagera, and Nyungwe. The gorilla permit is shown on its own line.", "rwanda-safaris");
+    $guides = mehs_country_guides();
+    $countries = [
+        "short-kenya-safaris" => ["zebra.webp", "Kenya", "kenya"],
+        "tanzania-safaris" => ["serengeti.webp", "Tanzania", "tanzania"],
+        "uganda-safaris" => ["gorilla.webp", "Uganda", "uganda"],
+        "rwanda-safaris" => ["rwanda.webp", "Rwanda", "rwanda"],
+    ];
+    if (isset($countries[$slug])) {
+        [$file, $name, $key] = $countries[$slug];
+        mehs_page_country($file, $name, $guides[$key][0], $guides[$key][1]);
         return true;
     }
     $tour = mehs_find_tour($slug);

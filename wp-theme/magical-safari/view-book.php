@@ -1,7 +1,15 @@
 <?php
+$trip = isset($_GET["trip"]) ? sanitize_text_field(wp_unslash($_GET["trip"])) : "";
+$opened_from_itinerary = $trip !== "" && (!isset($_GET["book"]) || $_GET["book"] !== "1");
+if ($opened_from_itinerary) {
+    $tour = mehs_find_tour_by_title($trip);
+    if ($tour) {
+        wp_safe_redirect(mehs_tour_url($tour));
+        exit;
+    }
+}
 get_header();
 mehs_banner("safari-vehicle.webp", "Reservation", "Book your safari");
-$trip = isset($_GET["trip"]) ? sanitize_text_field(wp_unslash($_GET["trip"])) : "";
 ?>
 <div class="wrap page-block">
   <p class="page-lead">Reservation form. We confirm availability and send the price in writing.</p>

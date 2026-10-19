@@ -46,6 +46,7 @@
   </div>
 </section>
 <?php elseif (mehs_render_known_page()) : ?>
+<?php elseif (mehs_try_saved_itinerary()) : ?>
 <?php else : ?>
 <section class="banner page-banner">
   <?php if (has_post_thumbnail()) : ?>

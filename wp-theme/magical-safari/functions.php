@@ -23,9 +23,9 @@ add_filter("show_admin_bar", "__return_false", 1000);
 function mehs_assets() {
     $dir = get_template_directory_uri();
     wp_enqueue_style("mehs-font", "https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap", [], null);
-    wp_enqueue_style("mehs", $dir . "/assets/css/styles.css", ["mehs-font"], "1.0.8");
-    wp_enqueue_style("mehs-theme", $dir . "/assets/css/theme.css", ["mehs"], "1.0.8");
-    wp_enqueue_script("mehs", $dir . "/assets/js/main.js", [], "1.0.8", true);
+    wp_enqueue_style("mehs", $dir . "/assets/css/styles.css", ["mehs-font"], "1.1.3");
+    wp_enqueue_style("mehs-theme", $dir . "/assets/css/theme.css", ["mehs"], "1.1.3");
+    wp_enqueue_script("mehs", $dir . "/assets/js/main.js", [], "1.1.3", true);
     wp_localize_script("mehs", "MEHS_BOOK", [
         "url" => admin_url("admin-ajax.php?action=mehs_booking"),
         "nonce" => wp_create_nonce("mehs_booking"),
@@ -197,10 +197,10 @@ add_action("wp_ajax_mehs_booking", "mehs_handle_booking");
 add_action("wp_ajax_nopriv_mehs_booking", "mehs_handle_booking");
 
 function mehs_purge_saved_pages() {
-    if (get_option("mehs_purged") === "1.0.8") {
+    if (get_option("mehs_purged") === "1.1.3") {
         return;
     }
-    update_option("mehs_purged", "1.0.8", false);
+    update_option("mehs_purged", "1.1.3", false);
     do_action("litespeed_purge_all");
     if (!headers_sent()) {
         header("X-LiteSpeed-Purge: *");
