@@ -67,8 +67,15 @@
   </div></header>
   <div id="google_translate_element" class="gt-hidden"></div>
   </div>
-<main id="main"><div class="wrap page-hero"><p class="crumbs"><a href="/">Home</a> · <a href="/safaris/">Packages</a> · Book now</p><h1>Book your safari</h1><p>Reservation form. We confirm availability and send the price in writing.</p></div>
-    <div class="wrap page-block"><form class="book-form" id="book" data-enquiry data-book data-whatsapp-number="254722326845" data-email-address="info@magicaleastafricaheritagesafaris.com">
+<main id="main"><section class="banner page-banner">
+    <img src="/images/safari-vehicle.webp" alt="An open-roof safari vehicle at sunset" width="1600" height="1066" fetchpriority="high" decoding="async" class="banner-media">
+    <div class="banner-copy wrap">
+      <p class="kicker">Reservation</p>
+      <h1>Book your safari</h1>
+      <p class="crumbs"><a href="/">Home</a> · Book your safari</p>
+    </div>
+  </section>
+    <div class="wrap page-block"><p class="page-lead">Reservation form. We confirm availability and send the price in writing.</p><form class="book-form" id="book" data-enquiry data-book data-whatsapp-number="254722326845" data-email-address="info@magicaleastafricaheritagesafaris.com">
     <div class="book-layout">
       <div class="plan-card">
         <h2>Personal details</h2>
@@ -88,14 +95,13 @@
           <label>Package<input name="trip" placeholder="Name a safari, or leave this open"></label>
           <label>Anything we should know?<textarea name="note" rows="3"></textarea></label>
           <label class="check"><input type="checkbox" name="terms" required> I agree to the <a href="/booking-policy/">booking policy</a> and confirm these details are correct.</label>
-          <button class="btn btn-clay" type="submit">Book now</button>
-          <p class="fine">We confirm availability and send the price in writing. No payment is taken on this form.</p>
-          <div class="result" data-result>
-            <strong>Your booking request is ready to send.</strong>
-            <p class="fine">Use WhatsApp or email. The message below is filled in for you.</p>
-            <a class="btn btn-green" data-whatsapp href="https://wa.me/254722326845" target="_blank" rel="noopener">Send on WhatsApp</a>
-            <a class="btn btn-line" data-email href="mailto:info@magicaleastafricaheritagesafaris.com">Send by email</a>
-          </div>
+          <p class="fine">We confirm availability and send the price in writing. No payment is taken on this form. WhatsApp opens a chat for you to send. Email goes straight to the office.</p>
+          <div class="hp"><label>Leave this blank<input name="mehs_leave_blank" tabindex="-1" autocomplete="off"></label></div>
+    <div class="send-row">
+      <button class="btn btn-green" type="submit" name="channel" value="whatsapp">Send on WhatsApp</button>
+      <button class="btn btn-line" type="submit" name="channel" value="email">Send by email</button>
+    </div>
+    <div class="result" data-result><p data-status></p></div>
         </div>
       </div>
       <aside class="summary-card" data-summary data-usd-rate="">
@@ -112,35 +118,50 @@
 <footer class="site-footer"><div class="wrap">
     <div class="foot-grid">
       <div>
-        <h2>Magical East Africa Heritage Safaris</h2>
-        <p>Private journeys in Kenya, Tanzania, Uganda and Rwanda, planned from Nairobi. One name, on this website, on our email address and on your invoice.</p>
-        <p><a href="tel:+254722326845">+254 722 326 845</a><br><a href="mailto:info@magicaleastafricaheritagesafaris.com">info@magicaleastafricaheritagesafaris.com</a><br>Nairobi, Kenya</p>
+        <h2>Contact</h2>
+        <p class="foot-name">Magical East Africa Heritage Safaris</p>
+        <ul class="foot-contact">
+          <li><span>Phone</span><a href="tel:+254722326845">+254 722 326 845</a></li>
+          <li><span>Email</span><a href="mailto:info@magicaleastafricaheritagesafaris.com">info@magicaleastafricaheritagesafaris.com</a></li>
+          <li><span>Office</span><span>Nairobi, Kenya</span></li>
+        </ul>
       </div>
-      <div>
+      <nav aria-label="Plan">
         <h2>Plan</h2>
-        <p><a href="/book/">Book a safari</a><br><a href="/safaris/">Packages</a><br><a href="/group-safaris/">Group safaris</a><br><a href="/excursions/">Day trips</a><br><a href="/booking-policy/">Booking policy</a></p>
-      </div>
-      <div>
+        <a href="/book/">Book a safari</a>
+        <a href="/safaris/">Packages</a>
+        <a href="/group-safaris/">Group safaris</a>
+        <a href="/excursions/">Day trips</a>
+        <a href="/booking-policy/">Booking policy</a>
+      </nav>
+      <nav aria-label="Learn">
         <h2>Learn</h2>
-        <p><a href="/best-time-to-visit/">Best time to visit</a><br><a href="/travel-info/">Visas, packing, tipping</a><br><a href="/gallery/">Gallery</a><br><a href="/faqs/">FAQs</a><br><a href="/blog/">Blog</a><br><a href="/about/">About</a></p>
-      </div>
-      <div>
-        <h2>Notes</h2>
-        <form data-enquiry data-whatsapp-number="254722326845" data-email-address="info@magicaleastafricaheritagesafaris.com">
-          <label>Newsletter<input type="email" name="email" placeholder="Email address" required></label>
+        <a href="/about/">About</a>
+        <a href="/best-time-to-visit/">Best time to visit</a>
+        <a href="/travel-info/">Visas, packing, tipping</a>
+        <a href="/faqs/">FAQs</a>
+        <a href="/blog/">Blog</a>
+      </nav>
+      <div class="foot-news">
+        <h2>Newsletter</h2>
+        <p>Seasonal notes by email. We write to you. We do not sell the address.</p>
+        <form class="foot-form" data-enquiry data-whatsapp-number="254722326845" data-email-address="info@magicaleastafricaheritagesafaris.com">
+          <label>Email address<input type="email" name="email" placeholder="Email address" required></label>
           <input type="hidden" name="trip" value="Newsletter">
           <input type="hidden" name="name" value="Newsletter reader">
           <input type="hidden" name="month" value="Not travelling yet">
           <input type="hidden" name="adults" value="1">
-          <button class="btn btn-clay" type="submit">Request the list</button>
-          <div class="result" data-result><a data-email href="mailto:info@magicaleastafricaheritagesafaris.com">Email me the signup</a></div>
+          <div class="hp"><label>Leave this blank<input name="mehs_leave_blank" tabindex="-1" autocomplete="off"></label></div>
+          <button class="btn btn-clay" type="submit" name="channel" value="email">Request the list</button>
+          <div class="result" data-result><p data-status></p></div>
         </form>
       </div>
     </div>
     <div class="legal">
-      <p><a href="/">Home</a> · <a href="/privacy/">Privacy</a> · <a href="/image-credits/">Photograph credits</a></p>
-      <p>© 2026 Magical East Africa Heritage Safaris. Display prices in EUR and GBP are approximate. Quotes are issued in US dollars.</p>
+      <p>© 2026 Magical East Africa Heritage Safaris</p>
+      <p class="legal-links"><a href="/privacy/">Privacy</a><a href="/image-credits/">Photograph credits</a></p>
     </div>
+    <p class="legal-note">Display prices in EUR and GBP are approximate. Quotes are issued in US dollars.</p>
   </div></footer>
   <a class="wa-float" href="https://wa.me/254722326845" target="_blank" rel="noopener">WhatsApp</a>
 <script>window.MEHS_GA_ID = "";</script>

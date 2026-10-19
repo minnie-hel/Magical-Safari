@@ -1,0 +1,68 @@
+.page-banner {
+  align-items: flex-end !important;
+  text-align: left !important;
+  min-height: 13rem !important;
+  height: 13rem !important;
+}
+.page-banner .banner-copy,
+.page-banner h1,
+.page-banner .crumbs {
+  text-align: left !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+.page-block { padding: 1.5rem 0 3rem; }
+.entry {
+  max-width: 1080px;
+  margin: 0 auto;
+  text-align: left;
+}
+.entry .elementor,
+.entry .e-con,
+.entry .e-con-inner,
+.entry .elementor-section,
+.entry .elementor-container {
+  max-width: 100% !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  text-align: left !important;
+}
+.entry h1,
+.entry h2,
+.entry h3,
+.entry p,
+.entry li,
+.entry .elementor-heading-title,
+.entry .elementor-widget-text-editor,
+.entry .elementor-widget-container {
+  text-align: left !important;
+}
+.entry > .elementor > .e-con:first-child .elementor-widget-heading { display: none; }
+.entry .elementor-widget-image,
+.entry .elementor-widget-image-box { margin: 0.8rem 0 1.2rem; }
+.entry .elementor-widget-image img,
+.entry .elementor-widget-image-box img,
+.entry .elementor-widget-theme-post-featured-image img {
+  width: 100% !important;
+  height: 280px !important;
+  max-height: 280px !important;
+  object-fit: cover !important;
+  object-position: center 40% !important;
+  border-radius: 0.9rem;
+}
+@media (min-width: 760px) {
+  .entry .e-con.e-flex { align-items: flex-start !important; gap: 1.2rem !important; }
+  .entry .elementor-widget-image { flex: 0 0 42%; max-width: 42%; }
+  .entry .elementor-widget-text-editor { flex: 1 1 50%; }
+}
+.posts { display: grid; gap: 1rem; }
+.offer-photo img {
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 16 / 10 !important;
+  object-fit: cover !important;
+}
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.7rem; }
+.gallery img { width: 100%; height: 180px; object-fit: cover; border-radius: 0.7rem; }
+body.home .banner { min-height: 32rem; }
+.wa__btn_popup, .wa__popup_chat_box, #nta-wa-gdpr, .nta-wa-popup { display: none !important; }

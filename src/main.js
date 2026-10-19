@@ -38,26 +38,57 @@ function loadAnalytics() {
   window.gtag("config", id);
 }
 
-function formSummary(form) {
+function formPayload(form) {
   const data = new FormData(form);
-  const interests = data.getAll("interest");
-  const lines = [
-    "Safari enquiry for Magical East Africa Heritage Safaris",
-    `Name: ${data.get("name") || ""}`,
-    `Email: ${data.get("email") || ""}`,
-    `Phone: ${data.get("phone") || ""}`,
-    `WhatsApp: ${data.get("whatsapp") || ""}`,
-    `Country: ${data.get("country") || ""}`,
-    `Travel date: ${data.get("date") || ""}`,
-    `Travel month: ${data.get("month") || ""}`,
-    `People: ${data.get("adults") || ""}`,
-    `Children: ${data.get("children") || ""}`,
-    `Budget: ${data.get("budget") || ""}`,
-    `Interests: ${interests.join(", ") || ""}`,
-    `Trip: ${data.get("trip") || "Not chosen yet"}`,
-    `Note: ${data.get("note") || ""}`,
+  const payload = {};
+  for (const [key, value] of data.entries()) {
+    if (key === "channel" || key === "terms" || key === "mehs_leave_blank") continue;
+    if (key === "interest") {
+      payload.interest = payload.interest || [];
+      payload.interest.push(String(value));
+    } else if (payload[key] === undefined) {
+      payload[key] = String(value);
+    }
+  }
+  const total = form.querySelector("[data-total]")?.textContent?.trim();
+  if (total) payload.total = total;
+  return payload;
+}
+
+function formSummary(form) {
+  const payload = formPayload(form);
+  const rows = [
+    ["Name", payload.name],
+    ["Email", payload.email],
+    ["Phone", payload.phone],
+    ["WhatsApp", payload.whatsapp],
+    ["Country", payload.country],
+    ["Travel date", payload.date],
+    ["Travel month", payload.month],
+    ["People", payload.adults],
+    ["Children", payload.children],
+    ["Budget", payload.budget],
+    ["Interests", Array.isArray(payload.interest) ? payload.interest.join(", ") : ""],
+    ["Trip", payload.trip || "Not chosen yet"],
+    ["Estimated total", payload.total],
+    ["Note", payload.note],
   ];
-  return lines.filter((line) => !line.endsWith(": ")).join("\n");
+  const lines = ["Booking for Magical East Africa Heritage Safaris"];
+  rows.forEach(([label, value]) => {
+    const text = String(value ?? "").trim();
+    if (!text || (label === "Children" && text === "0")) return;
+    lines.push(`${label}: ${text}`);
+  });
+  return lines.join("\n").slice(0, 1400);
+}
+
+function showStatus(result, message, isError) {
+  if (!result) return;
+  result.classList.add("is-on");
+  result.classList.toggle("is-error", Boolean(isError));
+  const status = result.querySelector("[data-status]");
+  if (status) status.textContent = message;
+  result.querySelectorAll("a").forEach((link) => link.remove());
 }
 
 function bindForms() {
@@ -65,22 +96,73 @@ function bindForms() {
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       if (!form.reportValidity()) return;
-      const summary = formSummary(form);
+      const channel = event.submitter?.value || "email";
       const result = form.querySelector("[data-result]");
-      const whatsapp = form.querySelector("[data-whatsapp]");
-      const email = form.querySelector("[data-email]");
-      const phone = form.getAttribute("data-whatsapp-number");
-      const address = form.getAttribute("data-email-address");
-      if (whatsapp) {
-        whatsapp.href = `https://wa.me/${phone}?text=${encodeURIComponent(summary)}`;
+      if (channel === "whatsapp") {
+        const phone = (form.getAttribute("data-whatsapp-number") || "").replace(/\D/g, "");
+        const url = `https://wa.me/${phone}?text=${encodeURIComponent(formSummary(form))}`;
+        const opened = window.open(url, "_blank");
+        if (opened) {
+          try { opened.opener = null; } catch (error) { /* The chat can still open. */ }
+        }
+        showStatus(
+          result,
+          opened
+            ? "WhatsApp is open with your booking. Press send so the office receives it."
+            : "WhatsApp was blocked by the browser. Use the button below.",
+          !opened,
+        );
+        if (!opened && result) {
+          const link = document.createElement("a");
+          link.className = "btn btn-green";
+          link.href = url;
+          link.target = "_blank";
+          link.rel = "noopener";
+          link.textContent = "Open WhatsApp";
+          result.appendChild(link);
+        }
+        track("generate_lead", { method: "whatsapp" });
+        return;
       }
-      if (email) {
-        email.href = `mailto:${address}?subject=${encodeURIComponent("Safari enquiry")}&body=${encodeURIComponent(summary)}`;
-      }
-      result?.classList.add("is-on");
-      track("generate_lead", { method: "enquiry_form" });
+      sendEmail(form, result);
     });
   });
+}
+
+async function sendEmail(form, result) {
+  const buttons = [...form.querySelectorAll("button")];
+  buttons.forEach((button) => { button.disabled = true; });
+  showStatus(result, "Sending your booking to the office…");
+  try {
+    const payload = formPayload(form);
+    if (window.MEHS_BOOK && window.MEHS_BOOK.nonce) payload.nonce = window.MEHS_BOOK.nonce;
+    const response = await fetch((window.MEHS_BOOK && window.MEHS_BOOK.url) || "/api/book.php", {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (response.status === 400) {
+      showStatus(result, data.error || "Check the form and try again.", true);
+      return;
+    }
+    if (!response.ok || !data.ok) throw new Error("mail");
+    showStatus(result, "Sent. The office has this booking by email and can reply to you.");
+    track("generate_lead", { method: "email" });
+  } catch (error) {
+    const address = form.getAttribute("data-email-address") || "";
+    const href = `mailto:${address}?subject=${encodeURIComponent("Safari booking")}&body=${encodeURIComponent(formSummary(form))}`;
+    showStatus(result, "The server could not send the email. Open your email app and press send.", true);
+    if (result) {
+      const link = document.createElement("a");
+      link.className = "btn btn-line";
+      link.href = href;
+      link.textContent = "Open email";
+      result.appendChild(link);
+    }
+  } finally {
+    buttons.forEach((button) => { button.disabled = false; });
+  }
 }
 
 const LANGUAGES = {

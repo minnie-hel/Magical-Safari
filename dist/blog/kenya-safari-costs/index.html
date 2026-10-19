@@ -73,35 +73,50 @@
 <footer class="site-footer"><div class="wrap">
     <div class="foot-grid">
       <div>
-        <h2>Magical East Africa Heritage Safaris</h2>
-        <p>Private journeys in Kenya, Tanzania, Uganda and Rwanda, planned from Nairobi. One name, on this website, on our email address and on your invoice.</p>
-        <p><a href="tel:+254722326845">+254 722 326 845</a><br><a href="mailto:info@magicaleastafricaheritagesafaris.com">info@magicaleastafricaheritagesafaris.com</a><br>Nairobi, Kenya</p>
+        <h2>Contact</h2>
+        <p class="foot-name">Magical East Africa Heritage Safaris</p>
+        <ul class="foot-contact">
+          <li><span>Phone</span><a href="tel:+254722326845">+254 722 326 845</a></li>
+          <li><span>Email</span><a href="mailto:info@magicaleastafricaheritagesafaris.com">info@magicaleastafricaheritagesafaris.com</a></li>
+          <li><span>Office</span><span>Nairobi, Kenya</span></li>
+        </ul>
       </div>
-      <div>
+      <nav aria-label="Plan">
         <h2>Plan</h2>
-        <p><a href="/book/">Book a safari</a><br><a href="/safaris/">Packages</a><br><a href="/group-safaris/">Group safaris</a><br><a href="/excursions/">Day trips</a><br><a href="/booking-policy/">Booking policy</a></p>
-      </div>
-      <div>
+        <a href="/book/">Book a safari</a>
+        <a href="/safaris/">Packages</a>
+        <a href="/group-safaris/">Group safaris</a>
+        <a href="/excursions/">Day trips</a>
+        <a href="/booking-policy/">Booking policy</a>
+      </nav>
+      <nav aria-label="Learn">
         <h2>Learn</h2>
-        <p><a href="/best-time-to-visit/">Best time to visit</a><br><a href="/travel-info/">Visas, packing, tipping</a><br><a href="/gallery/">Gallery</a><br><a href="/faqs/">FAQs</a><br><a href="/blog/">Blog</a><br><a href="/about/">About</a></p>
-      </div>
-      <div>
-        <h2>Notes</h2>
-        <form data-enquiry data-whatsapp-number="254722326845" data-email-address="info@magicaleastafricaheritagesafaris.com">
-          <label>Newsletter<input type="email" name="email" placeholder="Email address" required></label>
+        <a href="/about/">About</a>
+        <a href="/best-time-to-visit/">Best time to visit</a>
+        <a href="/travel-info/">Visas, packing, tipping</a>
+        <a href="/faqs/">FAQs</a>
+        <a href="/blog/">Blog</a>
+      </nav>
+      <div class="foot-news">
+        <h2>Newsletter</h2>
+        <p>Seasonal notes by email. We write to you. We do not sell the address.</p>
+        <form class="foot-form" data-enquiry data-whatsapp-number="254722326845" data-email-address="info@magicaleastafricaheritagesafaris.com">
+          <label>Email address<input type="email" name="email" placeholder="Email address" required></label>
           <input type="hidden" name="trip" value="Newsletter">
           <input type="hidden" name="name" value="Newsletter reader">
           <input type="hidden" name="month" value="Not travelling yet">
           <input type="hidden" name="adults" value="1">
-          <button class="btn btn-clay" type="submit">Request the list</button>
-          <div class="result" data-result><a data-email href="mailto:info@magicaleastafricaheritagesafaris.com">Email me the signup</a></div>
+          <div class="hp"><label>Leave this blank<input name="mehs_leave_blank" tabindex="-1" autocomplete="off"></label></div>
+          <button class="btn btn-clay" type="submit" name="channel" value="email">Request the list</button>
+          <div class="result" data-result><p data-status></p></div>
         </form>
       </div>
     </div>
     <div class="legal">
-      <p><a href="/">Home</a> · <a href="/privacy/">Privacy</a> · <a href="/image-credits/">Photograph credits</a></p>
-      <p>© 2026 Magical East Africa Heritage Safaris. Display prices in EUR and GBP are approximate. Quotes are issued in US dollars.</p>
+      <p>© 2026 Magical East Africa Heritage Safaris</p>
+      <p class="legal-links"><a href="/privacy/">Privacy</a><a href="/image-credits/">Photograph credits</a></p>
     </div>
+    <p class="legal-note">Display prices in EUR and GBP are approximate. Quotes are issued in US dollars.</p>
   </div></footer>
   <a class="wa-float" href="https://wa.me/254722326845" target="_blank" rel="noopener">WhatsApp</a>
 <script>window.MEHS_GA_ID = "";</script>

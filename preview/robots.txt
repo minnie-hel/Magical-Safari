@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://magicaleastafricaheritagesafaris.com/sitemap.xml

@@ -27,10 +27,13 @@ rmSync(dist, { recursive: true, force: true });
 mkdirSync(join(dist, "css"), { recursive: true });
 mkdirSync(join(dist, "js"), { recursive: true });
 mkdirSync(join(dist, "images"), { recursive: true });
+mkdirSync(join(dist, "api"), { recursive: true });
 cpSync(join(root, "src/styles.css"), join(dist, "css/styles.css"));
 cpSync(join(root, "src/main.js"), join(dist, "js/main.js"));
+cpSync(join(root, "src/book.php"), join(dist, "api/book.php"));
 for (const item of credits) cpSync(join(root, "src/images", item.file), join(dist, "images", item.file));
 cpSync(join(root, "src/images/logo.svg"), join(dist, "images/logo.svg"));
+cpSync(join(root, "src/images/logo-header.svg"), join(dist, "images/logo-header.svg"));
 
 const routes = [];
 
@@ -99,15 +102,19 @@ function formFields({ compact = false, trip = "" } = {}) {
     </fieldset>
     ${trip ? `<input type="hidden" name="trip" value="${esc(trip)}">` : `<label>Trip, if you have one in mind<input name="trip" placeholder="Optional"></label>`}
     ${compact ? "" : `<label>Anything we should know?<textarea name="note" rows="4"></textarea></label>`}
-    <button class="btn btn-clay" type="submit">Send my safari plan</button>
     <p class="fine">We use this only to reply. No payment is taken on this form.</p>
-    <div class="result" data-result>
-      <strong>Your enquiry is ready to send.</strong>
-      <p class="fine">This site has no inbox of its own yet. Use WhatsApp or email and the message below is filled in for you.</p>
-      <a class="btn btn-green" data-whatsapp href="https://wa.me/${site.whatsapp}" target="_blank" rel="noopener">Send on WhatsApp</a>
-      <a class="btn btn-line" data-email href="mailto:${site.email}">Send by email</a>
-    </div>
+    ${sendChoices()}
   </div>`;
+}
+
+function sendChoices({ emailOnly = false, emailLabel = "Send by email" } = {}) {
+  const whatsapp = emailOnly ? "" : `<button class="btn btn-green" type="submit" name="channel" value="whatsapp">Send on WhatsApp</button>`;
+  return `<div class="hp"><label>Leave this blank<input name="mehs_leave_blank" tabindex="-1" autocomplete="off"></label></div>
+    <div class="send-row">
+      ${whatsapp}
+      <button class="btn btn-line" type="submit" name="channel" value="email">${esc(emailLabel)}</button>
+    </div>
+    <div class="result" data-result><p data-status></p></div>`;
 }
 
 function enquiryForm({ compact = false, trip = "", title = "Plan my safari" } = {}) {
@@ -142,14 +149,8 @@ function bookingForm({ trip = "", usd = "" } = {}) {
           ${trip ? `<input type="hidden" name="trip" value="${esc(trip)}">` : `<label>Package<input name="trip" placeholder="Name a safari, or leave this open"></label>`}
           <label>Anything we should know?<textarea name="note" rows="3"></textarea></label>
           <label class="check"><input type="checkbox" name="terms" required> I agree to the <a href="/booking-policy/">booking policy</a> and confirm these details are correct.</label>
-          <button class="btn btn-clay" type="submit">Book now</button>
-          <p class="fine">We confirm availability and send the price in writing. No payment is taken on this form.</p>
-          <div class="result" data-result>
-            <strong>Your booking request is ready to send.</strong>
-            <p class="fine">Use WhatsApp or email. The message below is filled in for you.</p>
-            <a class="btn btn-green" data-whatsapp href="https://wa.me/${site.whatsapp}" target="_blank" rel="noopener">Send on WhatsApp</a>
-            <a class="btn btn-line" data-email href="mailto:${site.email}">Send by email</a>
-          </div>
+          <p class="fine">We confirm availability and send the price in writing. No payment is taken on this form. WhatsApp opens a chat for you to send. Email goes straight to the office.</p>
+          ${sendChoices()}
         </div>
       </div>
       <aside class="summary-card" data-summary data-usd-rate="${priced ? rate : ""}">
@@ -205,6 +206,17 @@ function catalogOffer(tour) {
     summary: tour.intro[0] || "",
     days: tour.dayCount,
   });
+}
+
+function pageBanner(image, kicker, title) {
+  return `<section class="banner page-banner">
+    ${img(image, { eager: true, className: "banner-media" })}
+    <div class="banner-copy wrap">
+      <p class="kicker">${esc(kicker)}</p>
+      <h1>${esc(title)}</h1>
+      <p class="crumbs"><a href="/">Home</a> · ${esc(title)}</p>
+    </div>
+  </section>`;
 }
 
 function header(path) {
@@ -264,35 +276,50 @@ function footer() {
   return `<footer class="site-footer"><div class="wrap">
     <div class="foot-grid">
       <div>
-        <h2>${esc(site.name)}</h2>
-        <p>Private journeys in Kenya, Tanzania, Uganda and Rwanda, planned from Nairobi. One name, on this website, on our email address and on your invoice.</p>
-        <p><a href="tel:${site.phoneHref}">${esc(site.phone)}</a><br><a href="mailto:${site.email}">${esc(site.email)}</a><br>${esc(site.city)}</p>
+        <h2>Contact</h2>
+        <p class="foot-name">${esc(site.name)}</p>
+        <ul class="foot-contact">
+          <li><span>Phone</span><a href="tel:${site.phoneHref}">${esc(site.phone)}</a></li>
+          <li><span>Email</span><a href="mailto:${site.email}">${esc(site.email)}</a></li>
+          <li><span>Office</span><span>${esc(site.city)}</span></li>
+        </ul>
       </div>
-      <div>
+      <nav aria-label="Plan">
         <h2>Plan</h2>
-        <p><a href="/book/">Book a safari</a><br><a href="/safaris/">Packages</a><br><a href="/group-safaris/">Group safaris</a><br><a href="/excursions/">Day trips</a><br><a href="/booking-policy/">Booking policy</a></p>
-      </div>
-      <div>
+        <a href="/book/">Book a safari</a>
+        <a href="/safaris/">Packages</a>
+        <a href="/group-safaris/">Group safaris</a>
+        <a href="/excursions/">Day trips</a>
+        <a href="/booking-policy/">Booking policy</a>
+      </nav>
+      <nav aria-label="Learn">
         <h2>Learn</h2>
-        <p><a href="/best-time-to-visit/">Best time to visit</a><br><a href="/travel-info/">Visas, packing, tipping</a><br><a href="/gallery/">Gallery</a><br><a href="/faqs/">FAQs</a><br><a href="/blog/">Blog</a><br><a href="/about/">About</a></p>
-      </div>
-      <div>
-        <h2>Notes</h2>
-        <form data-enquiry data-whatsapp-number="${site.whatsapp}" data-email-address="${site.email}">
-          <label>Newsletter<input type="email" name="email" placeholder="Email address" required></label>
+        <a href="/about/">About</a>
+        <a href="/best-time-to-visit/">Best time to visit</a>
+        <a href="/travel-info/">Visas, packing, tipping</a>
+        <a href="/faqs/">FAQs</a>
+        <a href="/blog/">Blog</a>
+      </nav>
+      <div class="foot-news">
+        <h2>Newsletter</h2>
+        <p>Seasonal notes by email. We write to you. We do not sell the address.</p>
+        <form class="foot-form" data-enquiry data-whatsapp-number="${site.whatsapp}" data-email-address="${site.email}">
+          <label>Email address<input type="email" name="email" placeholder="Email address" required></label>
           <input type="hidden" name="trip" value="Newsletter">
           <input type="hidden" name="name" value="Newsletter reader">
           <input type="hidden" name="month" value="Not travelling yet">
           <input type="hidden" name="adults" value="1">
-          <button class="btn btn-clay" type="submit">Request the list</button>
-          <div class="result" data-result><a data-email href="mailto:${site.email}">Email me the signup</a></div>
+          <div class="hp"><label>Leave this blank<input name="mehs_leave_blank" tabindex="-1" autocomplete="off"></label></div>
+          <button class="btn btn-clay" type="submit" name="channel" value="email">Request the list</button>
+          <div class="result" data-result><p data-status></p></div>
         </form>
       </div>
     </div>
     <div class="legal">
-      <p><a href="/">Home</a> · <a href="/privacy/">Privacy</a> · <a href="/image-credits/">Photograph credits</a></p>
-      <p>© ${new Date().getFullYear()} ${esc(site.name)}. Display prices in EUR and GBP are approximate. Quotes are issued in US dollars.</p>
+      <p>© ${new Date().getFullYear()} ${esc(site.name)}</p>
+      <p class="legal-links"><a href="/privacy/">Privacy</a><a href="/image-credits/">Photograph credits</a></p>
     </div>
+    <p class="legal-note">Display prices in EUR and GBP are approximate. Quotes are issued in US dollars.</p>
   </div></footer>
   <a class="wa-float" href="https://wa.me/${site.whatsapp}" target="_blank" rel="noopener">WhatsApp</a>`;
 }
@@ -693,8 +720,15 @@ const pages = [
     title: `Safari packages | ${site.name}`,
     description: "Private safari packages in Kenya, Tanzania, Uganda and Rwanda, with duration and indicative from-prices.",
     path: "/safaris/",
-    body: `<div class="wrap page-hero"><p class="crumbs"><a href="/">Home</a></p><h1>Packages</h1><p>Open a package for the day-by-day plan, then book it with your travel date. Prices on the private routes are planning figures.</p></div>
-      <div class="wrap page-block"><div class="offers">${safaris.map(safariOffer).join("")}${catalog.map(catalogOffer).join("")}</div>
+    body: `${pageBanner("elephant-savanna", "Safaris", "Packages")}
+      <div class="wrap page-block">
+      <p class="page-lead">Open a package for the day-by-day plan, then book it with your travel date. Prices on the private routes are planning figures. Shared departures are on the group page, and single days are with the excursions.</p>
+      ${[
+        ["Kenya", safaris.filter((safari) => safari.country === "Kenya").map(safariOffer).join("") + catalog.filter((tour) => tour.section === "short-kenya-safaris").map(catalogOffer).join("")],
+        ["Tanzania", safaris.filter((safari) => safari.country === "Tanzania").map(safariOffer).join("") + catalog.filter((tour) => tour.section === "tanzania-safaris").map(catalogOffer).join("")],
+        ["Uganda", safaris.filter((safari) => safari.country === "Uganda").map(safariOffer).join("") + catalog.filter((tour) => tour.section === "uganda-safaris").map(catalogOffer).join("")],
+        ["Rwanda", safaris.filter((safari) => safari.country === "Rwanda").map(safariOffer).join("") + catalog.filter((tour) => tour.section === "rwanda-safaris").map(catalogOffer).join("")],
+      ].map(([title, cards]) => `<section class="gallery-block"><h2>${esc(title)}</h2><div class="offers">${cards}</div></section>`).join("")}
       <h2 id="styles" class="ruled">Ways to travel</h2>
       <div class="offers offers-4">${styles.map((style) => `<a class="offer" href="/safari-styles/${style.slug}/"><div class="offer-photo">${img(style.image)}</div><div class="offer-body"><h3>${esc(style.name)}</h3><div class="offer-foot"><span>View</span><span class="offer-go">Open</span></div></div></a>`).join("")}</div>
       </div>`,
@@ -708,11 +742,12 @@ const pages = [
     description: "A month-by-month wildlife calendar for Kenya, Tanzania, Uganda and Rwanda, including the Great Migration.",
     path: "/best-time-to-visit/",
     image: "migration",
-    body: `<div class="wrap page-hero"><h1>Best time to visit</h1><p>Wildlife does not follow a single high season across four countries. Use this as a planning calendar, then tell us the month you can actually travel.</p></div>
-    <div class="wrap calendar">${months.map(([month, text, tag]) => `<article class="month"><b>${esc(month)}</b><span class="badge">${esc(tag)}</span><p>${esc(text)}</p></article>`).join("")}</div>
-    <div class="wrap prose"><h2>The migration, without the slogan</h2>
+    body: `${pageBanner("migration", "Wildlife calendar", "Best time to visit")}
+    <div class="wrap page-block"><p class="page-lead">Wildlife does not follow a single high season across four countries. Use this as a planning calendar, then tell us the month you can actually travel.</p>
+    <div class="calendar">${months.map(([month, text, tag]) => `<article class="month"><b>${esc(month)}</b><span class="badge">${esc(tag)}</span><p>${esc(text)}</p></article>`).join("")}</div>
+    <div class="prose"><h2>The migration, without the slogan</h2>
     <p>The herds calve on the southern Serengeti around January and February. They move west toward the Grumeti around May and June, then north. Mara River crossings, on the Kenya or Tanzania bank, are most often looked for from July to October. By November the movement is south again. None of those sentences is a promise for a given week.</p>
-    <p><a class="btn btn-green" href="/contact/">Tell us your month</a></p></div>`,
+    <p><a class="btn btn-green" href="/contact/">Tell us your month</a></p></div></div>`,
   })],
   ["/about/", () => layout({
     bodyClass: "about-page",
@@ -829,46 +864,77 @@ const pages = [
     title: `Day trips and excursions | ${site.name}`,
     description: "Private day trips from Nairobi and from the Kenya coast, with honest notes on which ones are too long.",
     path: "/excursions/",
-    body: `<div class="wrap page-hero"><h1>Excursions and day trips</h1><p>These sit beside a longer safari or a beach stay. A day in Amboseli, Ol Pejeta or Tsavo from Nairobi is mostly driving, and the notes on those pages say so. Cultural days in Nairobi and Mombasa, Wasini, Watamu, the coast chama stay and the student beach package are here as well.</p></div>
-    <div class="wrap page-block"><div class="offers">${catalog.filter((tour) => tour.section === "excursions").map(catalogOffer).join("")}</div></div>`,
+    body: `${pageBanner("safari-vehicle", "Day trips", "Excursions and day trips")}
+    <div class="wrap page-block"><p class="page-lead">These sit beside a longer safari or a beach stay. A day in Amboseli, Ol Pejeta or Tsavo from Nairobi is mostly driving, and the notes on those pages say so. Cultural days in Nairobi and Mombasa, Wasini, Watamu, the coast chama stay and the student beach package are here as well.</p><div class="offers">${catalog.filter((tour) => tour.section === "excursions").map(catalogOffer).join("")}</div></div>`,
   })],
   ["/group-safaris/", () => layout({
     title: `Small group safaris | ${site.name}`,
     description: "Small group safari departures for up to six guests, arranged when several enquiries share a month.",
     path: "/group-safaris/",
-    body: `<div class="wrap page-hero"><h1>Group safaris</h1>
-      <p>These are shared-vehicle departures for solo travellers, couples and anyone who wants the Mara without paying for a private car. The migration departures are planned for July to October. A date is only a departure once the vehicle has the guests. If your month does not match, the same route can still be done privately.</p></div>
-      <div class="wrap page-block"><div class="offers">${catalog.filter((tour) => tour.section === "group-safaris").map(catalogOffer).join("")}</div></div>`,
+    body: `${pageBanner("zebra", "Shared departures", "Group safaris")}
+      <div class="wrap page-block">
+      <p class="page-lead">These are shared-vehicle departures for solo travellers, couples and anyone who wants the Mara without paying for a private car. The migration departures are planned for July to October. A date is only a departure once the vehicle has the guests. If your month does not match, the same route can still be done privately.</p>
+      <div class="offers">${catalog.filter((tour) => tour.section === "group-safaris").map(catalogOffer).join("")}</div></div>`,
   })],
   ["/blog/", () => layout({
     title: `Safari journal | ${site.name}`,
     description: "Notes on choosing between the Masai Mara and the Serengeti, and on what a Kenya safari costs.",
     path: "/blog/",
-    body: `<div class="wrap page-hero"><h1>Journal</h1><p>Two articles to read before you ask for a quote. More will go here when we have something useful to add, not on a schedule for its own sake.</p></div>
-    <div class="wrap posts">${posts.map((post) => `<article class="card">${img(post.image)}<div class="safari-body"><p class="fine">${esc(post.date)}</p><h2><a href="/blog/${post.slug}/">${esc(post.title)}</a></h2><p>${esc(post.excerpt)}</p></div></article>`).join("")}</div>`,
+    body: `${pageBanner("kilimanjaro", "Journal", "Journal")}
+    <div class="wrap page-block"><p class="page-lead">Two articles to read before you ask for a quote. More will go here when we have something useful to add, not on a schedule for its own sake.</p>
+    <div class="posts">${posts.map((post) => `<article class="card">${img(post.image)}<div class="safari-body"><p class="fine">${esc(post.date)}</p><h2><a href="/blog/${post.slug}/">${esc(post.title)}</a></h2><p>${esc(post.excerpt)}</p></div></article>`).join("")}</div></div>`,
   })],
   ["/book/", () => layout({
     title: `Book your safari | ${site.name}`,
     description: "Reservation form for a Magical East Africa Heritage Safaris package. Choose a date and the number of travellers.",
     path: "/book/",
-    body: `<div class="wrap page-hero"><p class="crumbs"><a href="/">Home</a> · <a href="/safaris/">Packages</a> · Book now</p><h1>Book your safari</h1><p>Reservation form. We confirm availability and send the price in writing.</p></div>
-    <div class="wrap page-block">${bookingForm()}</div>`,
+    body: `${pageBanner("safari-vehicle", "Reservation", "Book your safari")}
+    <div class="wrap page-block"><p class="page-lead">Reservation form. We confirm availability and send the price in writing.</p>${bookingForm()}</div>`,
   })],
   ["/gallery/", () => layout({
     title: `Gallery | ${site.name}`,
     description: "Photographs from the parks and coasts on our East African safari routes.",
     path: "/gallery/",
-    image: "serengeti",
-    body: `<div class="wrap page-hero"><p class="crumbs"><a href="/">Home</a></p><h1>Gallery</h1><p>Parks, wildlife and coast on the routes we plan.</p></div>
-    <div class="wrap gallery page-block">${Object.keys(images).map((key) => img(key, { className: "media square" })).join("")}</div>`,
+    image: "migration",
+    body: `<section class="banner page-banner">
+      ${img("migration", { eager: true, className: "banner-media" })}
+      <div class="banner-copy wrap">
+        <p class="kicker">Photographs</p>
+        <h1>Gallery</h1>
+        <p class="crumbs"><a href="/">Home</a> · Gallery</p>
+      </div>
+    </section>
+    <div class="wrap page-block">${[
+      ["Kenya", ["amboseli", "kilimanjaro", "tsavo", "zebra", "migration", "lions", "flamingo", "samburu", "rhino", "safari-vehicle"]],
+      ["Tanzania and the coast", ["serengeti", "ngorongoro", "zanzibar"]],
+      ["Uganda and Rwanda", ["gorilla", "queen", "rwanda"]],
+    ].map(([title, keys]) => `<section class="gallery-block"><h2>${esc(title)}</h2><div class="photo-wall">${keys.map((key) => `<figure class="photo-card">${img(key)}<figcaption>${esc(images[key].alt)}</figcaption></figure>`).join("")}</div></section>`).join("")}</div>`,
   })],
   ["/faqs/", () => layout({
     title: `FAQs | ${site.name}`,
     description: "Answers before you book a safari with Magical East Africa Heritage Safaris.",
     path: "/faqs/",
-    body: `<div class="wrap page-hero"><p class="crumbs"><a href="/">Home</a></p><h1>FAQs</h1><p>The questions guests ask before they book.</p></div>
-    <div class="wrap page-block faq">${faqs.map((item) => `<details><summary>${esc(item.q)}</summary><p>${esc(item.a)}</p></details>`).join("")}
-    <p><a class="btn btn-clay" href="/book/">Book a safari</a></p></div>`,
+    image: "acacia-sunset",
+    body: `<section class="banner page-banner">
+      ${img("acacia-sunset", { eager: true, className: "banner-media" })}
+      <div class="banner-copy wrap">
+        <p class="kicker">Before you book</p>
+        <h1>FAQs</h1>
+        <p class="crumbs"><a href="/">Home</a> · FAQs</p>
+      </div>
+    </section>
+    <div class="wrap page-block faq-layout">
+      <aside class="faq-side">
+        <h2>Ask us the rest</h2>
+        <p>If your question is not here, write or call. The same desk replies.</p>
+        <p><a class="btn btn-clay" href="/contact/">Contact us</a> <a class="btn btn-line" href="/book/">Book a safari</a></p>
+      </aside>
+      <div class="faq">${[
+        ["When to go", [0, 7]],
+        ["Your trip", [2, 3, 4]],
+        ["Before you pay", [1, 5, 6]],
+      ].map(([title, indexes], group) => `<section class="faq-group"><h2>${esc(title)}</h2>${indexes.map((index, item) => `<details${group === 0 && item === 0 ? " open" : ""}><summary>${esc(faqs[index].q)}</summary><p>${esc(faqs[index].a)}</p></details>`).join("")}</section>`).join("")}</div>
+    </div>`,
   })],
   ["/contact/", () => layout({
     title: `Contact | ${site.name}`,
@@ -910,12 +976,8 @@ const pages = [
           </div>
           <label>Message<textarea name="note" rows="5" placeholder="Tell us about your travel plans" required></textarea></label>
           <input type="hidden" name="trip" value="Contact message">
-          <button class="btn btn-green" type="submit">Send message</button>
-          <div class="result" data-result>
-            <strong>Your message is ready to send.</strong>
-            <a class="btn btn-green" data-whatsapp href="https://wa.me/${site.whatsapp}" target="_blank" rel="noopener">Send on WhatsApp</a>
-            <a class="btn btn-line" data-email href="mailto:${site.email}">Send by email</a>
-          </div>
+          <p class="fine">WhatsApp opens a chat for you to send. Email goes straight to the office.</p>
+          ${sendChoices()}
         </div>
       </form>
     </div></section>`,
@@ -925,7 +987,7 @@ const pages = [
     description: "How Magical East Africa Heritage Safaris uses enquiry details.",
     path: "/privacy/",
     body: `<div class="wrap prose page-hero"><h1>Privacy</h1>
-      <p>The enquiry form on this site does not store your message on a server. It prepares a WhatsApp or email message that you choose to send. If you email or message us, we use your name, contact details and trip notes to reply and, if you book, to run the safari.</p>
+      <p>A booking or message is emailed to ${esc(site.email)} or sent by you in WhatsApp. We do not keep a copy in a database on this website. We use your name, contact details and trip notes to reply and, if you book, to run the safari.</p>
       <p>We do not sell mailing lists. A newsletter request is a request for us to write to you. You can ask us to delete an enquiry by emailing ${esc(site.email)}.</p>
       <p>If a Google Analytics ID is later added to the site, page views and form or WhatsApp clicks can be measured. Until that ID is set, the analytics script is not loaded.</p></div>`,
   })],
@@ -972,7 +1034,7 @@ for (const dest of destinations) {
     path: `/destinations/${dest.slug}/`,
     image: dest.image,
     body: `<div class="wrap page-hero"><p class="kicker">${esc(dest.country)}</p><h1>${esc(dest.name)}</h1><p>${esc(dest.tagline)}</p></div>
-    <div class="wrap split"><div class="prose">${img(dest.image, { eager: true })}<p>${esc(dest.summary)}</p><p><strong>Best months.</strong> ${esc(dest.best)}</p><p><strong>How long to stay.</strong> ${esc(dest.stay)}</p></div>
+    <div class="wrap split dest-layout"><div class="prose"><p>${esc(dest.summary)}</p><p><strong>Best months.</strong> ${esc(dest.best)}</p><p><strong>How long to stay.</strong> ${esc(dest.stay)}</p></div><figure class="about-figure">${img(dest.image, { className: "about-photo" })}</figure></div>
     <div class="plan-card"><h2>Book this place</h2><p>Tell us the date and who is travelling. The reservation form carries ${esc(dest.name)} into the summary.</p><a class="btn btn-clay" href="${bookLink(dest.name)}">Book now</a></div></div>
     ${trips.length ? `<div class="wrap page-block"><h2>Trips that include this place</h2><div class="trip-list">${trips.map((safari) => tripRow({ href: `/safaris/${safari.slug}/`, title: safari.title, meta: `${safari.days} days · ${safari.country}` })).join("")}</div></div>` : ""}`,
   }));
