@@ -9,6 +9,7 @@ define("MEHS_PHONE", "+254 722 326 845");
 define("MEHS_PHONE_HREF", "+254722326845");
 
 require get_template_directory() . "/inc/design.php";
+require get_template_directory() . "/inc/editor-seed.php";
 
 function mehs_post_has_elementor($post_id) {
     $post_id = (int) $post_id;
@@ -37,6 +38,136 @@ function mehs_elementor_request() {
         return true;
     }
     return !empty($plugin->editor) && method_exists($plugin->editor, "is_edit_mode") && $plugin->editor->is_edit_mode();
+}
+
+function mehs_mark_elementor_public($post_id) {
+    $post_id = (int) $post_id;
+    if ($post_id < 1 || wp_is_post_autosave($post_id) || wp_is_post_revision($post_id)) {
+        return;
+    }
+    update_post_meta($post_id, "mehs_elementor_public", "1");
+}
+
+function mehs_elementor_is_public($post_id = 0) {
+    $post_id = $post_id ? (int) $post_id : (int) get_the_ID();
+    return $post_id > 0 && get_post_meta($post_id, "mehs_elementor_public", true) === "1";
+}
+
+function mehs_note_elementor_save($document) {
+    $post_id = 0;
+    if (is_object($document) && method_exists($document, "get_main_id")) {
+        $post_id = (int) $document->get_main_id();
+    }
+    mehs_mark_elementor_public($post_id);
+}
+add_action("elementor/document/after_save", "mehs_note_elementor_save");
+
+function mehs_note_elementor_ajax_save($post_id) {
+    if (defined("DOING_AUTOSAVE") && DOING_AUTOSAVE) {
+        return;
+    }
+    $action = isset($_REQUEST["action"]) ? sanitize_key(wp_unslash($_REQUEST["action"])) : "";
+    if ($action === "elementor_ajax") {
+        mehs_mark_elementor_public($post_id);
+    }
+}
+add_action("save_post", "mehs_note_elementor_ajax_save", 20);
+
+function mehs_elementor_blocks($post_id) {
+    $raw = get_post_meta($post_id, "_elementor_data", true);
+    $data = is_array($raw) ? $raw : json_decode((string) $raw, true);
+    if (!is_array($data)) {
+        return [];
+    }
+    $blocks = [];
+    $walk = function ($elements) use (&$walk, &$blocks) {
+        foreach ($elements as $element) {
+            if (!is_array($element)) {
+                continue;
+            }
+            $type = $element["widgetType"] ?? "";
+            $settings = isset($element["settings"]) && is_array($element["settings"]) ? $element["settings"] : [];
+            if ($type === "heading") {
+                $text = trim(wp_strip_all_tags($settings["title"] ?? ""));
+                if ($text !== "") {
+                    $blocks[] = ["kind" => "h", "tag" => $settings["header_size"] ?? "h2", "text" => $text];
+                }
+            } elseif ($type === "text-editor") {
+                $text = trim(preg_replace("/\s+/", " ", wp_strip_all_tags($settings["editor"] ?? "")));
+                if ($text !== "") {
+                    $blocks[] = ["kind" => "p", "text" => $text];
+                }
+            }
+            if (!empty($element["elements"]) && is_array($element["elements"])) {
+                $walk($element["elements"]);
+            }
+        }
+    };
+    $walk($data);
+    return $blocks;
+}
+
+function mehs_saved_copy($post_id = 0) {
+    static $cache = [];
+    $empty = ["h1" => "", "sections" => []];
+    $post_id = $post_id ? (int) $post_id : (int) get_the_ID();
+    if (isset($cache[$post_id])) {
+        return $cache[$post_id];
+    }
+    if (!mehs_elementor_is_public($post_id)) {
+        $cache[$post_id] = $empty;
+        return $empty;
+    }
+    $current = null;
+    foreach (mehs_elementor_blocks($post_id) as $block) {
+        if ($block["kind"] === "h") {
+            if ($current) {
+                $empty["sections"][] = $current;
+            }
+            if ($block["tag"] === "h1" && $empty["h1"] === "") {
+                $empty["h1"] = $block["text"];
+            }
+            $current = ["tag" => $block["tag"], "title" => $block["text"], "paras" => []];
+            continue;
+        }
+        if (!$current) {
+            $current = ["tag" => "p", "title" => "", "paras" => [$block["text"]]];
+            continue;
+        }
+        $current["paras"][] = $block["text"];
+    }
+    if ($current) {
+        $empty["sections"][] = $current;
+    }
+    $cache[$post_id] = $empty;
+    return $empty;
+}
+
+function mehs_saved_paragraphs($title, $tag = "") {
+    $copy = mehs_saved_copy();
+    $wanted = strtolower(trim(preg_replace("/\s+/", " ", wp_strip_all_tags($title))));
+    foreach ($copy["sections"] as $section) {
+        $label = strtolower(trim(preg_replace("/\s+/", " ", $section["title"])));
+        if ($label !== $wanted) {
+            continue;
+        }
+        if ($tag !== "" && $section["tag"] !== $tag) {
+            continue;
+        }
+        return $section["paras"];
+    }
+    return [];
+}
+
+function mehs_saved_line($title, $fallback, $tag = "") {
+    $paras = mehs_saved_paragraphs($title, $tag);
+    $best = "";
+    foreach ($paras as $paragraph) {
+        if (strlen($paragraph) > strlen($best)) {
+            $best = $paragraph;
+        }
+    }
+    return $best !== "" ? $best : $fallback;
 }
 
 function mehs_use_page_content() {
@@ -73,9 +204,9 @@ add_action("after_setup_theme", "mehs_setup");
 function mehs_assets() {
     $dir = get_template_directory_uri();
     wp_enqueue_style("mehs-font", "https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap", [], null);
-    wp_enqueue_style("mehs", $dir . "/assets/css/styles.css", ["mehs-font"], "1.1.8");
-    wp_enqueue_style("mehs-theme", $dir . "/assets/css/theme.css", ["mehs"], "1.1.8");
-    wp_enqueue_script("mehs", $dir . "/assets/js/main.js", [], "1.1.8", true);
+    wp_enqueue_style("mehs", $dir . "/assets/css/styles.css", ["mehs-font"], "1.2.1");
+    wp_enqueue_style("mehs-theme", $dir . "/assets/css/theme.css", ["mehs"], "1.2.1");
+    wp_enqueue_script("mehs", $dir . "/assets/js/main.js", [], "1.2.1", true);
     wp_localize_script("mehs", "MEHS_BOOK", [
         "url" => admin_url("admin-ajax.php?action=mehs_booking"),
         "nonce" => wp_create_nonce("mehs_booking"),
@@ -183,6 +314,9 @@ function mehs_ensure_theme_pages() {
 add_action("init", "mehs_ensure_theme_pages");
 
 function mehs_redirect_old_book_link() {
+    if (mehs_elementor_request()) {
+        return;
+    }
     $on_book = is_page("book") || get_query_var("mehs_view") === "book";
     if (!$on_book) {
         return;
@@ -220,6 +354,7 @@ function mehs_template($template) {
 add_filter("template_include", "mehs_template");
 
 function mehs_flush_routes() {
+    mehs_ensure_theme_pages();
     flush_rewrite_rules(false);
 }
 add_action("after_switch_theme", "mehs_flush_routes");
@@ -280,10 +415,10 @@ add_action("wp_ajax_mehs_booking", "mehs_handle_booking");
 add_action("wp_ajax_nopriv_mehs_booking", "mehs_handle_booking");
 
 function mehs_purge_saved_pages() {
-    if (get_option("mehs_purged") === "1.1.8") {
+    if (get_option("mehs_purged") === "1.2.1") {
         return;
     }
-    update_option("mehs_purged", "1.1.8", false);
+    update_option("mehs_purged", "1.2.1", false);
     flush_rewrite_rules(false);
     do_action("litespeed_purge_all");
     if (!headers_sent()) {

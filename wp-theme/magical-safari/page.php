@@ -29,10 +29,20 @@ if (is_page("packages") && !empty($_GET["itinerary"])) {
   <div>
     <p class="kicker">Who we are</p>
     <h2>About us</h2>
+    <?php
+    $mehs_about = array_values(array_filter(mehs_saved_paragraphs("About us", "h2"), function ($paragraph) {
+        return strlen($paragraph) > 40;
+    }));
+    if ($mehs_about) :
+        foreach ($mehs_about as $mehs_about_paragraph) : ?>
+    <p><?php echo esc_html($mehs_about_paragraph); ?></p>
+        <?php endforeach;
+    else : ?>
     <p><strong>Magical East Africa Heritage Safaris</strong> is a safari company based in Nairobi. Kenya is the flagship: the Mara, Amboseli, Tsavo, Samburu, Nakuru and Ol Pejeta. We also plan Tanzania, Uganda and Rwanda when the days, and the permit budget, are real.</p>
     <p>The journeys are private, or a shared vehicle when you choose a group safari. The same desk writes the itinerary, names the lodges on the quote, and stays on the phone from the first message until you are home. On the vehicle, guests write about guide James Ngigi. Nicole helps shape the plan before you book. Grace is the person guests have reached after the deposit.</p>
     <p>The name on this website is the name on our email address and the name that should appear on your invoice. Some reviews shorten it to Magical Africa Safaris. That is the same desk.</p>
     <p>We are listed on SafariBookings and SafariOptions. Ask us for the Tourism Regulatory Authority licence before you pay a deposit.</p>
+    <?php endif; ?>
   </div>
   <figure class="about-figure"><?php echo mehs_image("safari-vehicle.webp", "Safari vehicle at sunset", "about-photo"); ?></figure>
 </div></section>
@@ -96,9 +106,7 @@ if (is_page("packages") && !empty($_GET["itinerary"])) {
       wp_reset_postdata(); ?>
     </div>
   <?php endif; ?>
-  <?php if (!mehs_post_has_elementor(get_the_ID())) {
-      the_content();
-  } ?>
+  <?php the_content(); ?>
   <?php if (is_page("contact")) : ?>
     <form class="contact-card message-form" data-enquiry data-whatsapp-number="<?php echo esc_attr(MEHS_WHATSAPP); ?>" data-email-address="<?php echo esc_attr(MEHS_EMAIL); ?>">
       <h2>Send a message</h2>

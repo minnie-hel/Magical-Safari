@@ -216,8 +216,9 @@ function mehs_offer_grid($tours) {
 }
 
 function mehs_render_packages_list() {
+    $lead = "Open a package for the day-by-day plan, then book it with your travel date. Shared departures are on the group page, and single days are with the excursions.";
     mehs_banner("elephant-savanna.webp", "Safaris", "Packages");
-    echo '<div class="wrap page-block"><p class="page-lead">Open a package for the day-by-day plan, then book it with your travel date. Shared departures are on the group page, and single days are with the excursions.</p>';
+    echo '<div class="wrap page-block"><p class="page-lead">' . esc_html(mehs_saved_line("Packages", $lead, "h1")) . "</p>";
     $groups = [
         "Kenya" => "short-kenya-safaris",
         "Tanzania" => "tanzania-safaris",
@@ -529,15 +530,17 @@ function mehs_page_faqs() {
 }
 
 function mehs_page_group() {
+    $lead = "These are shared-vehicle departures for solo travellers, couples and anyone who wants the Mara without paying for a private car. The migration departures are planned for July to October. A date is only a departure once the vehicle has the guests.";
     mehs_banner("zebra.webp", "Shared departures", "Group safaris");
-    echo '<div class="wrap page-block"><p class="page-lead">These are shared-vehicle departures for solo travellers, couples and anyone who wants the Mara without paying for a private car. The migration departures are planned for July to October. A date is only a departure once the vehicle has the guests.</p>';
+    echo '<div class="wrap page-block"><p class="page-lead">' . esc_html(mehs_saved_line("Group safaris", $lead, "h1")) . "</p>";
     mehs_offer_grid(mehs_tours_in("group-safaris"));
     echo "</div>";
 }
 
 function mehs_page_excursions() {
+    $lead = "These sit beside a longer safari or a beach stay. A day in Amboseli, Ol Pejeta or Tsavo from Nairobi is mostly driving, and the notes on those pages say so.";
     mehs_banner("safari-vehicle.webp", "Day trips", "Excursions and day trips");
-    echo '<div class="wrap page-block"><p class="page-lead">These sit beside a longer safari or a beach stay. A day in Amboseli, Ol Pejeta or Tsavo from Nairobi is mostly driving, and the notes on those pages say so.</p>';
+    echo '<div class="wrap page-block"><p class="page-lead">' . esc_html(mehs_saved_line("Excursions and day trips", $lead, "h1")) . "</p>";
     mehs_offer_grid(mehs_tours_in("excursions"));
     echo "</div>";
 }
@@ -557,6 +560,16 @@ function mehs_guide_section($heading, $items) {
 }
 
 function mehs_page_country($file, $title, $intro, $sections) {
+    $saved_title = mehs_saved_copy();
+    if ($saved_title["h1"] !== "") {
+        $title = $saved_title["h1"];
+    }
+    $intro = mehs_saved_line($title, $intro, "h1");
+    foreach ($sections as $heading => $items) {
+        foreach ($items as $index => $item) {
+            $sections[$heading][$index][1] = mehs_saved_line($item[0], $item[1], "h3");
+        }
+    }
     mehs_banner($file, "Destinations", $title);
     echo '<div class="wrap page-block"><p class="page-lead">' . esc_html($intro) . "</p>";
     foreach ($sections as $heading => $items) {
