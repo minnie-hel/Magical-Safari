@@ -1,6 +1,22 @@
 <?php get_header(); ?>
 <?php if (have_posts()) : while (have_posts()) : the_post(); ?>
-<?php if (is_page("about-us")) : ?>
+<?php
+$mehs_package = null;
+if (is_page("packages") && !empty($_GET["itinerary"])) {
+    $mehs_package = mehs_find_tour(sanitize_title(wp_unslash($_GET["itinerary"])));
+}
+?>
+<?php if ($mehs_package) : ?>
+<?php mehs_render_package($mehs_package); ?>
+<?php elseif (mehs_use_page_content()) : ?>
+<?php the_content(); ?>
+<?php elseif (is_page("packages")) : ?>
+<?php mehs_render_packages_list(); ?>
+<?php elseif (is_page("book")) : ?>
+<?php mehs_render_book_form(); ?>
+<?php elseif (is_page("gallery")) : ?>
+<?php mehs_gallery_wall(); ?>
+<?php elseif (is_page("about-us")) : ?>
 <section class="banner page-banner">
   <?php echo mehs_image("acacia-sunset.webp", "Acacia at sunset", "banner-media"); ?>
   <div class="banner-copy wrap">
@@ -80,7 +96,9 @@
       wp_reset_postdata(); ?>
     </div>
   <?php endif; ?>
-  <?php the_content(); ?>
+  <?php if (!mehs_post_has_elementor(get_the_ID())) {
+      the_content();
+  } ?>
   <?php if (is_page("contact")) : ?>
     <form class="contact-card message-form" data-enquiry data-whatsapp-number="<?php echo esc_attr(MEHS_WHATSAPP); ?>" data-email-address="<?php echo esc_attr(MEHS_EMAIL); ?>">
       <h2>Send a message</h2>

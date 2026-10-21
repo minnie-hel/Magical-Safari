@@ -1,4 +1,8 @@
 <?php get_header(); ?>
+<?php if (have_posts()) : while (have_posts()) : the_post(); ?>
+<?php if (mehs_use_page_content()) : ?>
+<?php the_content(); ?>
+<?php else : ?>
 <section class="banner hero">
   <?php echo mehs_image("elephant-savanna.webp", "Elephants on the savannah", "banner-media"); ?>
   <div class="banner-copy wrap">
@@ -23,4 +27,6 @@
       </div>
   <p class="center"><a class="btn btn-green" href="<?php echo esc_url(home_url("/packages/")); ?>">View all packages</a></p>
 </div></section>
+<?php endif; ?>
+<?php endwhile; endif; ?>
 <?php get_footer(); ?>

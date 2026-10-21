@@ -1,4 +1,6 @@
 <?php
 get_header();
-mehs_gallery_wall();
+if (!mehs_render_saved_page("gallery")) {
+    mehs_gallery_wall();
+}
 get_footer();

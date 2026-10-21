@@ -215,6 +215,47 @@ function mehs_offer_grid($tours) {
     echo "</div>";
 }
 
+function mehs_render_packages_list() {
+    mehs_banner("elephant-savanna.webp", "Safaris", "Packages");
+    echo '<div class="wrap page-block"><p class="page-lead">Open a package for the day-by-day plan, then book it with your travel date. Shared departures are on the group page, and single days are with the excursions.</p>';
+    $groups = [
+        "Kenya" => "short-kenya-safaris",
+        "Tanzania" => "tanzania-safaris",
+        "Uganda" => "uganda-safaris",
+        "Rwanda" => "rwanda-safaris",
+        "International" => "international-destinations",
+    ];
+    foreach ($groups as $title => $section) {
+        $tours = mehs_tours_in($section);
+        if (!$tours) {
+            continue;
+        }
+        echo '<section class="gallery-block"><h2>' . esc_html($title) . "</h2>";
+        mehs_offer_grid($tours);
+        echo "</section>";
+    }
+    echo "</div>";
+}
+
+function mehs_render_book_form() {
+    $trip = isset($_GET["trip"]) ? sanitize_text_field(wp_unslash($_GET["trip"])) : "";
+    mehs_banner("safari-vehicle.webp", "Reservation", "Book your safari");
+    echo '<div class="wrap page-block"><p class="page-lead">Reservation form. We confirm availability and send the price in writing.</p>';
+    echo '<form class="book-form" data-enquiry data-whatsapp-number="' . esc_attr(MEHS_WHATSAPP) . '" data-email-address="' . esc_attr(MEHS_EMAIL) . '"><div class="plan-card"><h2>Personal details</h2><div class="form-grid">';
+    echo '<label>Full name<input name="name" autocomplete="name" required></label>';
+    echo '<label>Email address<input name="email" type="email" autocomplete="email" required></label>';
+    echo '<div class="form-grid form-2"><label>Phone number<input name="phone" autocomplete="tel" required></label><label>WhatsApp number<input name="whatsapp" autocomplete="tel"></label></div>';
+    echo '<label>Travel date<input name="date" type="date" required></label>';
+    echo '<label>Number of people<input name="adults" type="number" min="1" max="20" value="2" required></label>';
+    echo '<label>Package<input name="trip" value="' . esc_attr($trip) . '" placeholder="Name a safari, or leave this open"></label>';
+    echo '<label>Anything we should know?<textarea name="note" rows="4"></textarea></label>';
+    echo '<p class="fine">We confirm availability and send the price in writing. No payment is taken on this form.</p>';
+    echo '<div class="hp"><label>Leave this blank<input name="mehs_leave_blank" tabindex="-1" autocomplete="off"></label></div>';
+    echo '<div class="send-row"><button class="btn btn-green" type="submit" name="channel" value="whatsapp">Send on WhatsApp</button>';
+    echo '<button class="btn btn-line" type="submit" name="channel" value="email">Send by email</button></div>';
+    echo '<div class="result" data-result><p data-status></p></div></div></div></form></div>';
+}
+
 function mehs_plain($text) {
     $text = html_entity_decode((string) $text, ENT_QUOTES | ENT_HTML5, "UTF-8");
     return trim(preg_replace("/\s+/", " ", $text));
@@ -654,6 +695,47 @@ function mehs_country_guides() {
     ];
 }
 
+function mehs_page_destinations() {
+    mehs_banner("elephant-savanna.webp", "Where we travel", "Destinations");
+    echo '<div class="wrap page-block"><p class="page-lead">Kenya, Tanzania, Uganda and Rwanda, planned from Nairobi. Open a country for what to do there, then choose a package when the route is clear.</p><div class="offers">';
+    $places = [
+        ["short-kenya-safaris", "Kenya", "The Mara, Amboseli, Tsavo, Samburu and the coast.", "zebra.webp"],
+        ["tanzania-safaris", "Tanzania", "The Serengeti, Ngorongoro and Zanzibar.", "serengeti.webp"],
+        ["uganda-safaris", "Uganda", "Gorilla trekking, with Queen Elizabeth and Kibale.", "gorilla.webp"],
+        ["rwanda-safaris", "Rwanda", "Volcanoes, Nyungwe and Akagera.", "rwanda.webp"],
+    ];
+    foreach ($places as $place) {
+        $url = mehs_page_url($place[0]);
+        if (!$url) {
+            continue;
+        }
+        echo '<a class="offer" href="' . esc_url($url) . '"><div class="offer-photo">' . mehs_image($place[3], $place[1]) . '</div>';
+        echo '<div class="offer-body"><h3>' . esc_html($place[1]) . "</h3><p>" . esc_html($place[2]) . '</p><div class="offer-foot"><span>Guide</span><span class="offer-go">Open</span></div></div></a>';
+    }
+    echo "</div></div>";
+}
+
+function mehs_page_place_index($file, $kicker, $title, $lead) {
+    mehs_banner($file, $kicker, $title);
+    echo '<div class="wrap page-block"><p class="page-lead">' . esc_html($lead) . '</p><div class="offers">';
+    $pages = get_pages([
+        "parent" => get_the_ID(),
+        "post_status" => "publish",
+        "sort_column" => "menu_order,post_title",
+    ]);
+    foreach ($pages as $page) {
+        $image = get_the_post_thumbnail_url($page, "mehs-card");
+        echo '<a class="offer" href="' . esc_url(get_permalink($page)) . '"><div class="offer-photo">';
+        if ($image) {
+            echo '<img src="' . esc_url($image) . '" alt="' . esc_attr(get_the_title($page)) . '">';
+        } else {
+            echo mehs_image("safari-vehicle.webp", get_the_title($page));
+        }
+        echo '</div><div class="offer-body"><h3>' . esc_html(get_the_title($page)) . '</h3><div class="offer-foot"><span>Destination</span><span class="offer-go">Open</span></div></div></a>';
+    }
+    echo "</div></div>";
+}
+
 function mehs_render_known_page() {
     $slug = get_post_field("post_name");
     if ($slug === "contact") {
@@ -674,6 +756,21 @@ function mehs_render_known_page() {
     }
     if ($slug === "excursions") {
         mehs_page_excursions();
+        return true;
+    }
+    if ($slug === "destinations") {
+        mehs_page_destinations();
+        return true;
+    }
+    if ($slug === "local-destinations") {
+        mehs_page_place_index("acacia-sunset.webp", "Kenya parks", "Local destinations", "The parks and reserves these safaris are built around.");
+        return true;
+    }
+    if ($slug === "international-destinations") {
+        mehs_banner("zanzibar.webp", "Further afield", "International destinations");
+        echo '<div class="wrap page-block"><p class="page-lead">Trips outside East Africa. Open one for the day-by-day plan.</p>';
+        mehs_offer_grid(mehs_tours_in("international-destinations"));
+        echo "</div>";
         return true;
     }
     $guides = mehs_country_guides();
