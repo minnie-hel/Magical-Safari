@@ -367,7 +367,102 @@ document.querySelectorAll("[data-currency]").forEach((button) => {
 });
 loadAnalytics();
 bindForms();
+
+const navToggle = document.querySelector("[data-nav-toggle]");
+const navBar = document.querySelector(".nav-bar");
+if (navToggle && navBar) {
+  navToggle.addEventListener("click", () => {
+    const open = navBar.classList.toggle("is-open");
+    navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+  navBar.querySelectorAll("a").forEach((link) => {
+    link.addEventListener("click", () => {
+      navBar.classList.remove("is-open");
+      navToggle.setAttribute("aria-expanded", "false");
+    });
+  });
+}
+
+const backButton = document.querySelector("[data-go-back]");
+if (backButton) {
+  backButton.addEventListener("click", () => {
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+    window.location.href = "/";
+  });
+}
+const scrollButton = document.querySelector("[data-scroll-page]");
+if (scrollButton) {
+  const scrollLabel = scrollButton.querySelector("[data-scroll-label]");
+  const paintScroll = () => {
+    const down = window.scrollY < 280;
+    scrollButton.classList.toggle("is-up", !down);
+    const label = down ? "Next" : "Top";
+    if (scrollLabel) scrollLabel.textContent = label;
+    scrollButton.setAttribute("aria-label", down ? "Next section" : "Back to the top");
+  };
+  scrollButton.addEventListener("click", () => {
+    if (window.scrollY < 280) {
+      window.scrollBy({ top: Math.round(window.innerHeight * 0.85), behavior: "smooth" });
+      return;
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+  paintScroll();
+  window.addEventListener("scroll", paintScroll, { passive: true });
+}
 bindDrop();
 bindLanguage();
 bindTabs();
 bindFilters();
+
+const homeHero = document.querySelector("body.home .banner.hero");
+const homePhoto = homeHero && homeHero.querySelector(".banner-media:not(.mehs-hero-slide)");
+if (homeHero && homePhoto && !homeHero.querySelector(".mehs-hero-slide")) {
+  const src = homePhoto.getAttribute("src") || "";
+  const slash = src.lastIndexOf("/");
+  const dir = slash >= 0 ? src.slice(0, slash + 1) : "";
+  const frames = ["zebra.webp", "flamingo.webp", "lions.webp", "migration.webp", "gorilla.webp", "kilimanjaro.webp", "samburu.webp", "serengeti.webp", "rhino.webp", "amboseli.webp"];
+  if (dir) {
+    frames.forEach((file) => {
+      if (src.endsWith("/" + file) || src.endsWith(file)) return;
+      const slide = document.createElement("img");
+      slide.className = "banner-media mehs-hero-slide";
+      slide.alt = "";
+      slide.setAttribute("aria-hidden", "true");
+      slide.src = dir + file;
+      homePhoto.insertAdjacentElement("afterend", slide);
+    });
+  }
+}
+if (homeHero && homePhoto) {
+  const photos = Array.prototype.slice.call(homeHero.querySelectorAll(".banner-media"));
+  photos.forEach((photo, index) => {
+    photo.style.animation = "none";
+    photo.style.transform = "none";
+    photo.style.opacity = index === 0 ? "1" : "0";
+    photo.style.zIndex = index === 0 ? "-2" : "-3";
+  });
+  if (photos.length > 1 && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    let index = 0;
+    window.setInterval(() => {
+      const current = photos[index];
+      const nextIndex = (index + 1) % photos.length;
+      const next = photos[nextIndex];
+      current.style.zIndex = "-3";
+      next.style.zIndex = "-2";
+      next.style.transition = "none";
+      next.style.opacity = "0";
+      next.getBoundingClientRect();
+      next.style.transition = "opacity 0.9s ease";
+      next.style.opacity = "1";
+      window.setTimeout(() => {
+        current.style.transition = "none";
+        current.style.opacity = "0";
+      }, 940);
+      index = nextIndex;
+    }, 5200);
+  }
+}

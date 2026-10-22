@@ -6,6 +6,11 @@
       <p class="foot-name"><?php bloginfo("name"); ?></p>
       <ul class="foot-contact">
         <li><span>Phone</span><a href="tel:<?php echo esc_attr(MEHS_PHONE_HREF); ?>"><?php echo esc_html(MEHS_PHONE); ?></a></li>
+        <li><span>Telephone, WhatsApp, emergency</span>
+          <?php foreach (mehs_extra_lines() as $line) : ?>
+            <span class="foot-lines"><a href="tel:<?php echo esc_attr($line[1]); ?>"><?php echo esc_html($line[0]); ?></a><a href="https://wa.me/<?php echo esc_attr($line[2]); ?>" target="_blank" rel="noopener">WhatsApp</a></span>
+          <?php endforeach; ?>
+        </li>
         <li><span>Email</span><a href="mailto:<?php echo esc_attr(MEHS_EMAIL); ?>"><?php echo esc_html(MEHS_EMAIL); ?></a></li>
         <li><span>Office</span><span>Nairobi, Kenya</span></li>
       </ul>
@@ -23,7 +28,7 @@
       <?php if ($about = mehs_page_url("about-us")) : ?><a href="<?php echo esc_url($about); ?>">About</a><?php endif; ?>
       <?php if ($when = mehs_page_url("best-time-to-visit")) : ?><a href="<?php echo esc_url($when); ?>">Best time to visit</a><?php endif; ?>
       <?php if ($info = mehs_page_url("travel-info")) : ?><a href="<?php echo esc_url($info); ?>">Visas, packing, tipping</a><?php endif; ?>
-      <?php if ($faqs = mehs_page_url("faqs")) : ?><a href="<?php echo esc_url($faqs); ?>">FAQs</a><?php endif; ?>
+      <a href="<?php echo esc_url(mehs_page_url("faqs") ?: home_url("/faqs/")); ?>">FAQs</a>
       <?php if ($blog = mehs_page_url("blog")) : ?><a href="<?php echo esc_url($blog); ?>">Blog</a><?php endif; ?>
     </nav>
     <div class="foot-news">
@@ -48,8 +53,21 @@
       <?php if ($credits = mehs_page_url("image-credits")) : ?><a href="<?php echo esc_url($credits); ?>">Photograph credits</a><?php endif; ?>
     </p>
   </div>
-  <p class="legal-note">Display prices in EUR and GBP are approximate. Quotes are issued in US dollars.</p>
+  <p class="legal-note">We accept credit card payments. Quotes are issued in US dollars, and the EUR and GBP prices on the site are approximate.</p>
 </div></footer>
+<?php if (!mehs_elementor_request()) : ?>
+<nav class="page-tools" aria-label="Page navigation">
+  <button class="page-tool" type="button" data-go-back>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6 9 12l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>Back</span>
+  </button>
+  <button class="page-tool" type="button" data-scroll-page>
+    <span data-scroll-label>Next</span>
+    <svg class="scroll-down" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <svg class="scroll-up" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+</nav>
+<?php endif; ?>
 <a class="wa-float" href="https://wa.me/<?php echo esc_attr(MEHS_WHATSAPP); ?>" target="_blank" rel="noopener">WhatsApp</a>
 <?php wp_footer(); ?>
 </body>

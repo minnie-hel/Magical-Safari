@@ -10,6 +10,7 @@ if ($mehs_itinerary !== "") {
     }
 }
 if (!mehs_render_saved_page("packages")) {
+    $mehs_packages = get_page_by_path("packages");
     mehs_render_packages_list();
 }
 get_footer();

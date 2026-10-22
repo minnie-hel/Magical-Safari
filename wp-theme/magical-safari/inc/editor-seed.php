@@ -4,7 +4,7 @@
  * opens that design instead of the older Elementor layout.
  */
 
-const MEHS_EDITOR_SEED = "1.2.0";
+const MEHS_EDITOR_SEED = "1.2.11";
 
 function mehs_seed_id() {
     return substr(bin2hex(random_bytes(4)), 0, 7);
@@ -74,6 +74,9 @@ function mehs_seed_image($file, $alt) {
         "image" => ["url" => mehs_seed_url($file), "id" => "", "alt" => $alt, "source" => "url"],
         "image_size" => "full",
         "align" => "center",
+        "width" => ["unit" => "%", "size" => 100, "sizes" => []],
+        "height" => ["unit" => "px", "size" => 190, "sizes" => []],
+        "object-fit" => "cover",
     ]);
 }
 
@@ -104,7 +107,10 @@ function mehs_seed_section($elements, $settings = []) {
     return mehs_seed_box($elements, $settings, false);
 }
 
-function mehs_seed_hero($file, $title, $text, $buttons = []) {
+function mehs_seed_hero($file, $title, $text, $buttons = [], $height = null) {
+    if ($height === null) {
+        $height = ["unit" => "rem", "size" => 20, "sizes" => []];
+    }
     $elements = [
         mehs_seed_heading($title, "h1", "#ffffff", 58),
         mehs_seed_text("<p>" . $text . "</p>", "#f6f1ea"),
@@ -122,7 +128,7 @@ function mehs_seed_hero($file, $title, $text, $buttons = []) {
         "flex_direction" => "column",
         "flex_justify_content" => "flex-end",
         "flex_gap" => ["unit" => "px", "size" => 12, "column" => "12", "row" => "12"],
-        "min_height" => ["unit" => "vh", "size" => 72, "sizes" => []],
+        "min_height" => $height,
         "background_background" => "classic",
         "background_image" => ["url" => mehs_seed_url($file), "id" => "", "size" => "", "alt" => "", "source" => "url"],
         "background_position" => "center center",
@@ -136,8 +142,7 @@ function mehs_seed_hero($file, $title, $text, $buttons = []) {
 }
 
 function mehs_seed_tour_card($tour) {
-    $name = preg_replace("/^\d+\s+days?\s+/i", "", $tour["title"]);
-    $label = $tour["dayCount"] . " " . ($tour["dayCount"] === 1 ? "day" : "days") . " | " . $name;
+    $label = mehs_trip_label($tour);
     $bits = [
         mehs_seed_image($tour["image"], $tour["title"]),
         mehs_seed_heading($label, "h3", "#17352c", 22),
@@ -154,6 +159,8 @@ function mehs_seed_tour_card($tour) {
         "background_background" => "classic",
         "background_color" => "#f6f1ea",
         "border_radius" => ["unit" => "px", "top" => "12", "right" => "12", "bottom" => "12", "left" => "12", "isLinked" => true],
+        "width" => ["unit" => "%", "size" => 31, "sizes" => []],
+        "width_mobile" => ["unit" => "%", "size" => 100, "sizes" => []],
     ], true);
 }
 
@@ -176,7 +183,7 @@ function mehs_seed_home() {
         mehs_seed_hero("elephant-savanna.webp", "Discover the magic of East Africa.", "Private safaris in Kenya, Tanzania, Uganda and Rwanda, planned in Nairobi.", [
             mehs_seed_button("Explore packages", home_url("/packages/")),
             mehs_seed_button("Book a safari", home_url("/book/"), "#17352c"),
-        ]),
+        ], ["unit" => "vh", "size" => 78, "sizes" => []]),
         mehs_seed_section([
             mehs_seed_heading("Featured tour packages"),
             mehs_seed_text("<p>Open a package for the day-by-day plan, then book it with your travel date.</p>"),
@@ -356,6 +363,8 @@ function mehs_seed_destinations() {
             "background_background" => "classic",
             "background_color" => "#f6f1ea",
             "padding" => mehs_seed_pad(12, 12, 16, 12),
+            "width" => ["unit" => "%", "size" => 31, "sizes" => []],
+            "width_mobile" => ["unit" => "%", "size" => 100, "sizes" => []],
         ], true);
     }
     return [
@@ -414,6 +423,21 @@ function mehs_seed_book() {
     ];
 }
 
+function mehs_seed_live_box($html) {
+    return mehs_seed_box([
+        mehs_seed_widget("html", ["html" => $html]),
+    ], [
+        "content_width" => "full",
+        "flex_direction" => "column",
+        "padding" => mehs_seed_pad(0, 0, 0, 0),
+        "css_classes" => "mehs-live-canvas",
+    ], false);
+}
+
+function mehs_seed_drop_autosaves($post_id) {
+    unset($post_id);
+}
+
 function mehs_seed_page($post_id, $elements) {
     if (!$post_id || !$elements) {
         return;
@@ -421,9 +445,8 @@ function mehs_seed_page($post_id, $elements) {
     if (get_post_meta($post_id, "mehs_editor_seed", true) === MEHS_EDITOR_SEED) {
         return;
     }
-    if (get_post_meta($post_id, "mehs_elementor_public", true) === "1") {
-        return;
-    }
+    $already = !empty($GLOBALS["mehs_seeding"]);
+    $GLOBALS["mehs_seeding"] = true;
     update_post_meta($post_id, "_elementor_edit_mode", "builder");
     update_post_meta($post_id, "_elementor_template_type", "wp-page");
     update_post_meta($post_id, "_elementor_version", "3.24.0");
@@ -431,6 +454,10 @@ function mehs_seed_page($post_id, $elements) {
     delete_post_meta($post_id, "_elementor_css");
     delete_post_meta($post_id, "_elementor_element_cache");
     update_post_meta($post_id, "mehs_editor_seed", MEHS_EDITOR_SEED);
+    mehs_seed_drop_autosaves($post_id);
+    if (!$already) {
+        $GLOBALS["mehs_seeding"] = false;
+    }
 }
 
 function mehs_seed_by_slug($slug, $elements) {
@@ -443,39 +470,126 @@ function mehs_seed_by_slug($slug, $elements) {
     }
 }
 
+function mehs_seed_tour_page($tour) {
+    $blocks = [
+        mehs_seed_image($tour["image"], $tour["title"]),
+        mehs_seed_heading($tour["title"], "h1", "#ffffff", 48),
+        mehs_seed_heading("Package overview", "h2"),
+    ];
+    if (($tour["summary"] ?? "") !== "") {
+        $blocks[] = mehs_seed_text("<p>" . esc_html($tour["summary"]) . "</p>");
+    }
+    $days = isset($tour["days"]) && is_array($tour["days"]) ? $tour["days"] : [];
+    foreach ($days as $day) {
+        $label = trim((string) ($day["title"] ?? ""));
+        if ($label === "") {
+            continue;
+        }
+        $blocks[] = mehs_seed_heading($label, "h3", "#17352c", 22);
+        $text = trim((string) ($day["text"] ?? ""));
+        if ($text !== "") {
+            $blocks[] = mehs_seed_text("<p>" . esc_html($text) . "</p>");
+        }
+    }
+    return [mehs_seed_section($blocks)];
+}
+
+function mehs_seed_elements_for($post_id) {
+    $post = get_post($post_id);
+    if (!$post instanceof WP_Post) {
+        return null;
+    }
+    $slug = $post->post_name;
+    $front = (int) get_option("page_on_front");
+    if ((int) $post->ID === $front || $slug === "east-africa-safaris") {
+        return mehs_seed_home();
+    }
+    $pages = [
+        "about-us" => "mehs_seed_about",
+        "group-safaris" => "mehs_seed_group",
+        "packages" => "mehs_seed_packages",
+        "contact" => "mehs_seed_contact",
+        "faqs" => "mehs_seed_faqs",
+        "blog" => "mehs_seed_blog",
+        "gallery" => "mehs_seed_gallery",
+        "book" => "mehs_seed_book",
+        "excursions" => "mehs_seed_excursions",
+        "destinations" => "mehs_seed_destinations",
+    ];
+    if (isset($pages[$slug]) && function_exists($pages[$slug])) {
+        return $pages[$slug]();
+    }
+    $countries = [
+        "short-kenya-safaris" => ["kenya", "Kenya", "zebra.webp"],
+        "tanzania-safaris" => ["tanzania", "Tanzania", "serengeti.webp"],
+        "uganda-safaris" => ["uganda", "Uganda", "gorilla.webp"],
+        "rwanda-safaris" => ["rwanda", "Rwanda", "rwanda.webp"],
+    ];
+    if (isset($countries[$slug])) {
+        return mehs_seed_country($countries[$slug][0], $countries[$slug][1], $countries[$slug][2]);
+    }
+    $tour = mehs_find_tour($slug);
+    if ($tour) {
+        return mehs_seed_tour_page($tour);
+    }
+    return null;
+}
+
 function mehs_seed_editor_pages() {
     if (get_option("mehs_editor_seeded") === MEHS_EDITOR_SEED) {
         return;
     }
-    $front = (int) get_option("page_on_front");
-    if (!$front) {
-        $home = get_page_by_path("east-africa-safaris");
-        $front = $home instanceof WP_Post ? (int) $home->ID : 0;
-    }
-    if (!$front) {
+    if (!is_admin() && empty($_GET["elementor-preview"])) {
         return;
     }
-    mehs_seed_page($front, mehs_seed_home());
-    mehs_seed_by_slug("about-us", mehs_seed_about());
-    mehs_seed_by_slug("group-safaris", mehs_seed_group());
-    mehs_seed_by_slug("packages", mehs_seed_packages());
-    mehs_seed_by_slug("contact", mehs_seed_contact());
-    mehs_seed_by_slug("faqs", mehs_seed_faqs());
-    mehs_seed_by_slug("blog", mehs_seed_blog());
-    mehs_seed_by_slug("gallery", mehs_seed_gallery());
-    mehs_seed_by_slug("book", mehs_seed_book());
-    mehs_seed_by_slug("excursions", mehs_seed_excursions());
-    mehs_seed_by_slug("destinations", mehs_seed_destinations());
-    mehs_seed_by_slug("short-kenya-safaris", mehs_seed_country("kenya", "Kenya", "zebra.webp"));
-    mehs_seed_by_slug("tanzania-safaris", mehs_seed_country("tanzania", "Tanzania", "serengeti.webp"));
-    mehs_seed_by_slug("uganda-safaris", mehs_seed_country("uganda", "Uganda", "gorilla.webp"));
-    mehs_seed_by_slug("rwanda-safaris", mehs_seed_country("rwanda", "Rwanda", "rwanda.webp"));
+    $GLOBALS["mehs_seeding"] = true;
+    $priority = 0;
+    if (!empty($_GET["post"])) {
+        $priority = (int) $_GET["post"];
+    } elseif (!empty($_GET["elementor-preview"])) {
+        $priority = (int) $_GET["elementor-preview"];
+    }
+    $ids = [];
+    if ($priority > 0) {
+        $ids[] = $priority;
+    }
+    foreach (get_pages(["post_status" => "publish", "number" => 0, "hierarchical" => 0]) as $page) {
+        if ((int) $page->ID !== $priority) {
+            $ids[] = (int) $page->ID;
+        }
+    }
+    $wrote = 0;
+    $pending = false;
+    foreach ($ids as $id) {
+        if (get_post_meta($id, "mehs_editor_seed", true) === MEHS_EDITOR_SEED) {
+            continue;
+        }
+        try {
+            $elements = mehs_seed_elements_for($id);
+        } catch (Throwable $e) {
+            $pending = true;
+            continue;
+        }
+        if (!$elements) {
+            update_post_meta($id, "mehs_editor_seed", MEHS_EDITOR_SEED);
+            continue;
+        }
+        mehs_seed_page($id, $elements);
+        $wrote++;
+        if ($wrote >= 8) {
+            $pending = true;
+            break;
+        }
+    }
     if (class_exists("\\Elementor\\Plugin")) {
         $plugin = \Elementor\Plugin::$instance;
         if (!empty($plugin->files_manager) && method_exists($plugin->files_manager, "clear_cache")) {
             $plugin->files_manager->clear_cache();
         }
     }
-    update_option("mehs_editor_seeded", MEHS_EDITOR_SEED, false);
+    $GLOBALS["mehs_seeding"] = false;
+    if (!$pending) {
+        update_option("mehs_editor_seeded", MEHS_EDITOR_SEED, false);
+    }
 }
 add_action("init", "mehs_seed_editor_pages", 30);

@@ -12,7 +12,11 @@
 <div class="site-head">
 <header class="site-header"><div class="header-row">
   <a class="logo" href="<?php echo esc_url(home_url("/")); ?>"><?php echo mehs_image("logo.svg", "Magical Africa Safaris"); ?></a>
-  <nav class="nav-bar" aria-label="Primary">
+  <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav">
+    <span class="nav-toggle-icon" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="nav-toggle-label">Menu</span>
+  </button>
+  <nav class="nav-bar" id="site-nav" aria-label="Primary">
     <a href="<?php echo esc_url(home_url("/")); ?>"<?php echo is_front_page() ? ' aria-current="page"' : ""; ?>>Home</a>
     <?php
     $links = [
@@ -51,8 +55,7 @@
     <a href="<?php echo esc_url(home_url("/gallery/")); ?>">Gallery</a>
     <?php $blog = mehs_page_url("blog"); ?>
     <?php if ($blog) : ?><a href="<?php echo esc_url($blog); ?>">Blog</a><?php endif; ?>
-    <?php $faqs = mehs_page_url("faqs"); ?>
-    <?php if ($faqs) : ?><a href="<?php echo esc_url($faqs); ?>">FAQs</a><?php endif; ?>
+    <a href="<?php echo esc_url(mehs_page_url("faqs") ?: home_url("/faqs/")); ?>">FAQs</a>
     <?php $contact = mehs_page_url("contact"); ?>
     <?php if ($contact) : ?><a href="<?php echo esc_url($contact); ?>">Contact</a><?php endif; ?>
   </nav>
